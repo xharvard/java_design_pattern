@@ -1,0 +1,2329 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head>
+<script src="builder_files/ga.js" async="" type="text/javascript"></script><script>
+var ua = navigator.userAgent.toLowerCase();
+if(ua.match(/MicroMessenger/i)=="micromessenger") {
+    location.href='http://blog.chinaunix.net/article.php?url='+ window.location.href;
+}
+</script>
+        <style>
+    .Blog_nav1_2 a em { display:inline-block; width:16px; height:13px; background:url(/image/v.jpg) no-repeat; overflow:hidden;}
+</style>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<link rel="stylesheet" type="text/css" href="builder_files/style.css">
+<link rel="stylesheet" type="text/css" href="builder_files/qqFace.css">
+<link rel="stylesheet" type="text/css" href="builder_files/asyncbox.css">
+<link rel="stylesheet" type="text/css" href="builder_files/pager.css">
+<script type="text/javascript" src="builder_files/jquery_003.js"></script>
+<script type="text/javascript" src="builder_files/jquery.js"></script>
+<script type="text/javascript" src="builder_files/AsyncBox.js"></script>
+<title>【JAVA】设计模式之建造者模式（生成器模式）的使用分析-Bolaven-ChinaUnix博客</title>
+<meta name="description" content="
+	建造者模式也叫生成器模式，23种设计模式之一，属于创建类模式。
+在描述建造者模式之前，大家首先要明白一个道理就是任何设计模式的产生都是为了解决某一类问题，更准确的说是为了应对某一种变化，设计模式就是封装变化，把变化的部分和不变的部分">
+<script type="text/javascript" src="builder_files/h600.js"></script><script type="text/javascript" src="builder_files/h600_002.js"></script>
+
+<script type="text/javascript">
+if(/AppleWebKit.*Mobile/i.test(navigator.userAgent) || (/MIDP|SymbianOS|NOKIA|SAMSUNG|LG|NEC|TCL|Alcatel|BIRD|DBTEL|Dopod|PHILIPS|HAIER|LENOVO|MOT-|Nokia|SonyEricsson|SIE-|Amoi|ZTE/.test(navigator.userAgent))){
+	try{
+		if(!/iPad/i.test(navigator.userAgent)){
+			var oldurl=window.location.href;
+			var wapUrl= oldurl.replace('blog.chinaunix.net', "m.blog.chinaunix.net") ;
+			window.location.href = wapUrl;
+		}
+	}catch(e){}
+}
+</script>
+
+
+<script language="javascript">
+//用户是否在线
+var isOnLine = '';
+$(document).ready(function(){
+	var blog = {'name': '', 'name_url': '', 'brief': ''};
+	//消息通知显示和隐藏控制
+	$('#show_message_slide_button').hover(
+		function(){
+			$('#message_slide_div').slideDown(100);											   
+		},
+		function(){
+			
+		}
+	);
+
+	$('#message_slide_div').hover(
+		function(){
+			
+		},
+		function(){
+			$('#message_slide_div').slideUp(100);
+		}
+	);
+	
+	//编辑博客名
+	$('#editbna').click(function(){
+		blog.name = $('#bnaspan a').text();
+		var val = '<input id="bnainput" type="text" style="float:left" value="" rel="' +$(this).attr('rel') + '" /><input id="bnasub" type="button" style="float:left" class="btn1"><input id="bnacanl" type="button" style="float:left" class="btn2"><div class="clear"></div>';
+		$('#bnaspan').html(val);
+		$('#bnainput').val(blog.name);
+		$(this).parent().hide();
+	});
+	
+	$('#bnasub').live('click', function(){
+	    var rel = eval('({' + $('#bnainput').attr('rel') + '})');
+		var name = $('#bnainput').val();
+		if(name != blog.name){
+	        $.ajax({
+			    type: "POST",
+			    url: rel.url,	
+			    data: {
+				    'name' : name
+			    },
+			    success:function(data){
+				    if(data == 0){
+						$('#bnaspan').html(blog.name);
+						$('#bnaspan').html('<a href="' + rel.href + '">' + $('#bnaspan').html() + '</a>');
+				    }else{
+						$('#bnaspan').html(data);
+						$('#bnaspan').html('<a href="' + rel.href + '">' + $('#bnaspan').html() + '</a>');
+				    }
+					$('#editbna').parent().show();
+				}
+			});
+		}else{
+		    $('#bnaspan').text(blog.name).html();
+			$('#bnaspan').html('<a href="' + rel.href + '">' + $('#bnaspan').html() + '</a>');
+			$('#editbna').parent().show();
+		}
+	});
+	
+	$('#bnacanl').live('click', function(){
+		var rel = eval('({' + $('#bnainput').attr('rel') + '})');
+		$('#bnaspan').html('<a href="' + rel.href + '">' + blog.name + '</a>');
+		$('#editbna').parent().show();
+	});
+	
+	//编辑签名
+	$('#editbrief').click(function(){
+	    blog.brief = $('#briefem').text();
+		var val = '<input id="brfinput" type="text" style="float:left" value="" rel="' + $(this).attr('rel') + '" /><input id="brfsub" style="float:left"  type="button" class="btn1"><input style="float:left"  id="brfcanl" type="button" class="btn2"><div class="clear"></div>';
+		$('#briefem').html(val);
+		$('#brfinput').val(blog.brief);
+		$(this).parent().hide();
+	});
+	
+	$('#brfsub').live('click', function(){
+	    var url = $('#brfinput').attr('rel');
+		var brief = $('#brfinput').val();
+		if(brief != blog.brief){
+	        $.ajax({
+			    type: "POST",
+			    url: url,	
+			    data: {
+				    'brief' : brief
+			    },
+			    success:function(data){
+				    if(data == 0){
+				        $('#briefem').html(blog.brief);
+				    }else{
+						$('#briefem').html(data);
+				    }
+					$('#editbrief').parent().show();
+				}
+			});
+		}else{
+		    $('#briefem').text(blog.brief).html();
+			$('#editbrief').parent().show();
+		}
+	});
+	
+	$('#brfcanl').live('click', function(){
+		$('#briefem').html(blog.brief);
+		$('#editbrief').parent().show();
+	});
+
+});
+</script>
+<script src="builder_files/share.js"></script><link href="builder_files/share_style0_16.css" rel="stylesheet"></head>
+<body><div style="position: absolute; left: -1px; bottom: -1px; z-index: 0; width: 0px; height: 0px; overflow: hidden; visibility: hidden; display: none;" id="BAIDU_DUP_fp_wrapper"><iframe style="width: 0px; height: 0px; visibility: hidden; display: none;" src="builder_files/o.htm" id="BAIDU_DUP_fp_iframe"></iframe></div>
+<div class="box">
+  <!-- 一级导航 -->
+  <div class="Blog_nav1">
+    <div class="Blog_nav1_2"><a href="http://www.linxh.blog.chinaunix.net/"><img src="builder_files/1.png"></a><a href="http://www.chinaunix.net/" class="Blog_a1">Chinaunix首页</a> | <a href="http://bbs.chinaunix.net/" target="_blank">论坛</a> | <a href="http://u.it168.com/vip/"><font color="red">认证专区</font></a> | <a href="http://blog.chinaunix.net/" target="_blank">博客</a><span class="Blog_span1"></span>
+              <a href="http://www.linxh.blog.chinaunix.net/site/login.html" class="Blog_a1" onclick="linkto()">登录</a> | <a href="http://u.it168.com/Register?webid=5&amp;returnUrl=http%3A%2F%2Fwww.linxh.blog.chinaunix.net%2Fuid-29140694-id-4105980.html" class="Blog_a1">注册</a>
+          </div>
+	<!--自动提示层-->
+	<style>
+	.bor13221{border:1px #bbb solid;width:206px;position:absolute;top:34px;left:0;background:#fff; z-index:9999;display:none}
+	.bor13221 li{height:26px;line-height:26px;padding-left:6px;color:#555;font-size:14px;cursor:pointer;}
+	.here{background:#f3f3f3;}
+    </style>
+
+	<!--自动提示层-->
+    <div class="Blog_nav1_3" style="position:relative; z-index:9999;">
+	 <div class="bor13221">
+      <ul>
+      </ul>
+    </div>
+	  <form action="/site/search.html" method="post">
+		<input autocomplete="off" class="Blog_txt1" id="search_input_id" name="keywords" type="text">
+		<select class="Bolg_sel1" name="type" id="search_type_blog">
+		  <option selected="selected" value="blog">博文</option>
+		  <option value="author">博主</option>
+		</select>
+		<input value="" name="submit" class="Blog_btn1" type="submit">
+	 </form>
+    </div>
+    <div class="clear"></div>
+    <div class="Blog_nav1_layer1" id="message_slide_div" style="display:none;">
+	    <ul>
+	    	<li><a href="http://www.linxh.blog.chinaunix.net/message/private.html">私人消息()</a></li>
+	    	<li><a href="http://www.linxh.blog.chinaunix.net/message/system.html">系统消息()</a></li>
+	    	<li><a href="http://www.linxh.blog.chinaunix.net/member/request.html">好友请求()</a></li>
+	    	<li><a href="http://www.linxh.blog.chinaunix.net/member/notification.html">通知管理()</a></li>
+	    </ul>
+    </div>
+  </div>
+   <script type="text/javascript">
+  	$(function(){
+		//点击添加进文本框
+		$(".bor13221 li").live( 'click' , function(e){
+			if ( e && e.stopPropagation )
+			{
+				//因此它支持W3C的stopPropagation()方法
+				e.stopPropagation();
+			}
+			else
+			{
+				//否则，我们需要使用IE的方式来取消事件冒泡
+				window.event.cancelBubble = true; 
+			}
+			$('#search_input_id').val($(this).text());
+			$(".bor13221 ul").html('');
+			$(".bor13221").hide();
+		});
+		$(".bor13221 ul li").live({
+			mouseenter:
+			function()
+			{
+				$(".bor13221 ul li").removeClass("here");
+				$(this).addClass('here');
+			},
+			mouseleave:
+			function()
+			{
+				$(".bor13221 ul li").removeClass("here");
+				$(this).removeClass('here');
+			}
+		});
+		//自动提示
+		$('#search_input_id').keyup(function(event){
+			//取消博主的提示
+			var search_type_blog = $('#search_type_blog').val();
+			if(search_type_blog == 'author') return false;
+
+			var key = $(this).val();
+			//获取键值
+			var keycode = event.which; //38 上 40 下
+			var count = $('.bor13221 ul li').length;
+			if(key != '' && keycode != 38 && keycode != 40)
+			{
+				$.getJSON("http://api.sou.it168.com/autoWenKuCloud?jsoncallback=?",{"ty":"json","offset":"0","limit":"10","q":key}, function(result)
+					{
+						var arr = result.data;
+
+						var html ='';
+						for (i=0;i<arr.length ;i++ )   
+						{   
+							html += '<li>'+arr[i]+'</li>';
+						} 
+						
+						$('.bor13221 ul').html(html);
+						(arr.length > 1) ?  $(".bor13221").show() : $(".bor13221").hide();
+					}
+				);
+			}
+			else if(keycode == 38)
+			{
+				if(count > 0)
+				{
+					//遍历li
+					var curr_li_num;
+					$('.bor13221 ul li').each(function(index , dom){
+						if($(dom).attr('class') == 'here')
+						{
+							curr_li_num = index;
+							return false;
+						}
+					}); 
+					var next_li_num;
+					if(typeof(curr_li_num) == 'undefined')
+					{
+						next_li_num = count - 1;
+					}
+					else
+					{
+						if(curr_li_num == 0)
+						{
+							next_li_num = count - 1;
+						}
+						else
+						{
+							next_li_num = curr_li_num - 1;
+						}
+					}
+					$(".bor13221 ul li").removeClass("here");
+					$(".bor13221 ul li:eq(" + next_li_num + ")").addClass("here");
+					$('#search_input_id').val($(".bor13221 ul li:eq(" + next_li_num + ")").text());
+				}
+			}
+			else if(keycode == 40)
+			{
+				if(count > 0)
+				{
+					//遍历li
+					var curr_li_num;
+					$('.bor13221 ul li').each(function(index , dom){
+						if($(dom).attr('class') == 'here')
+						{
+							curr_li_num = index;
+							return false;
+						}
+					}); 
+					var next_li_num;
+					if(typeof(curr_li_num) == 'undefined')
+					{
+						next_li_num = 0;
+					}
+					else
+					{
+						if(curr_li_num == count - 1)
+						{
+							next_li_num = 0;
+						}
+						else
+						{
+							next_li_num = curr_li_num + 1;
+						}
+					}
+					$(".bor13221 ul li").removeClass("here");
+					$(".bor13221 ul li:eq(" + next_li_num + ")").addClass("here");
+					$('#search_input_id').val($(".bor13221 ul li:eq(" + next_li_num + ")").text());
+				}
+			}
+		});
+		$(document).click(function(e){
+			$(".bor13221").hide();
+		});
+
+	});
+  </script>
+  <!-- 头 -->
+  <!-- 推荐博客-->
+  <div class="Blog_header1">
+	<div class="img1"></div>    <div class="Blog_header1_1">
+      <p class="Blog_p1"><em><a href="http://www.linxh.blog.chinaunix.net/uid/29140694.html">Bolaven的ChinaUnix博客</a></em>      </p><p class="Blog_p2" style="color:#125A94">坚持，从未放弃...</p>
+    </div>
+        <div class="Blog_header1_2" id="hide_div1">
+    	<span class="Blog_span3"></span>
+    	<div class="float_div1" style="white-space:nowrap;" onmouseover="javascript:isMove=false" onmouseout="javascript:isMove=true">
+	    <ul style="line-height: 25px; margin-top: 0px;" id="noticev2">  
+		    		    <li><a href="http://blog.chinaunix.net/uid-10718265-id-5141960.html" target="_blank"> 互动：数据分析与云计算应用案例 （征集|参与）</a></li>
+		    		    <li><a href="http://bbs.chinaunix.net/thread-4182662-1-1.html" target="_blank">有奖讨论：企业网络架构的世界真有“试衣间”</a></li>
+		    		    <li><a href="http://bbs.chinaunix.net/thread-4181131-1-1.html" target="_blank">有奖征文：技术自白书之中国架构师 前8有奖！</a></li>
+		    	    </ul>
+	    </div>
+    </div>
+            <div class="Blog_header1_3"><a href="http://www.linxh.blog.chinaunix.net/uid/29140694.html">首页</a>　| 　<a href="http://www.linxh.blog.chinaunix.net/uid/29140694/abstract/1.html">博文目录</a>　| 　<a href="http://www.linxh.blog.chinaunix.net/member/profile/uid/29140694.html">关于我</a></div>
+  </div>
+    
+  <!-- 内容部分 -->
+  	<script type="text/javascript" src="builder_files/XRegExp.js"></script> <!-- XRegExp is bundled with the final shCore.js during build -->
+<script type="text/javascript" src="builder_files/shCore.js"></script>
+<script type="text/javascript" src="builder_files/shAutoloader.js"></script>
+<link type="text/css" rel="stylesheet" href="builder_files/shCore.css">
+<link type="text/css" rel="Stylesheet" href="builder_files/shThemeDefault.css">
+<link href="builder_files/fck_editorarea.css" rel="stylesheet" type="text/css">
+<style>
+.Blog_p5 em{ display:inline-block; width:16px; height:13px; background:url(/image/v.jpg) no-repeat; overflow:hidden;}
+</style>
+  <div class="Blog_contain"> 
+    <!-- 左 -->
+	<style>
+    .Blog_left1_1 p a em { display:inline-block; width:16px; height:13px; background:url(/image/v.jpg) no-repeat; overflow:hidden;}
+</style>
+
+<script language="javascript">
+$(document).ready(function(){
+	$('#ConcernBtn').bind('click',function(){
+			var cuid = '29140694';
+			var url =  '/member/concern.html';
+			var type = $(this).attr('rel');
+		
+			if(type == 'addConcern'){
+				$.ajax({
+					type : 'get',
+					url  : url,
+					data : {'op' : 'ajaxadd' , 'cuid' : cuid, 'random' : Math.random()},
+					success : function(msg){	
+					   if(msg == -1){
+						   showErrorMsg('参数错误！');
+					   } else if (msg == 0){
+						   showErrorMsg('关注失败，没有该用户！');
+					   } else if (msg == 1){
+						   showErrorMsg('关注失败，您已经关注了该用户！');
+					   } else if (msg == 2){
+						   $('#ConcernBtn').val('已关注');
+						   $('#ConcernBtn').attr('rel','delConcern');
+						   showSucceedMsg('关注成功!');
+					   } else if (msg == 3){
+						   showErrorMsg('未知错误');
+					   }
+					}
+				});	
+			} else if ( type == 'delConcern'){
+				$.ajax({
+					type : 'get',
+					url  : url,
+					data : {'op' : 'ajaxdel' , 'cuid' : cuid, 'random' : Math.random()},
+					success : function(msg){
+					   if(msg == 0){
+						   showErrorMsg('参数错误！','消息提示');
+					   } else if (msg == 1){
+						   showErrorMsg('操作失败，请尝试刷新页面重试！','消息提示');
+					   } else if (msg == 2){
+						   $('#ConcernBtn').val('加关注');
+						   $('#ConcernBtn').attr('rel','addConcern');
+						   showSucceedMsg('成功取消关注！','消息提示');
+					   } else if (msg == 3){
+						   showErrorMsg('未知错误！','消息提示'); 
+					   }
+					}
+				});	
+			}
+	});					   
+});
+
+//加好友
+function addFriend(fuid, url){
+	if(fuid == '' || fuid.length == 0){
+		showErrorMsg('缺少参数！','信息提示');
+		return false;
+	}
+	$.ajax({
+		   type : 'get',
+		   url : url,
+		   data : {'op' : 'add', 'fuid' : fuid , 'random' : Math.random()},
+		   success : function(msg){
+				if(msg == -1){
+					showErrorMsg('参数错误！','消息提示');
+				} else if (msg == -2){
+					showErrorMsg('添加好友失败,没有该用户的信息！','消息提示');
+				} else if (msg == -3){
+					showErrorMsg('添加好友失败,你不能添加自己为好友！','消息提示');
+				} else if (msg == -4){
+					showErrorMsg('添加好友未知错误,该错误已被记录！','消息提示');
+				} else if (msg == -5){
+					showErrorMsg('添加好友失败,你之前已经发送过好友请求,请耐心等待对方同意申请！','消息提示');
+				} else if (msg == -6){
+					showErrorMsg('添加好友失败,你们已经是好友了！','消息提示');
+				} else {
+					$.cover(true);
+					asyncbox.open({
+						id : 'addFriend',
+						title : '添加好友',
+						url : url,
+						data : {'op' : 'add', 'fuid' : fuid , 'random' : Math.random()},
+						width : 490,
+						height : 180,
+						scroll : 'no',
+						callback : function(action) {
+							if (action == 'close'){
+								$.cover(false);
+							}	
+						}
+					});	
+				}
+		   }
+	});	
+	
+}
+
+//发送短消息
+function postMessage(msguid, url){
+	if(msguid == '' || msguid.length == 0){
+		showErrorMsg('缺少参数！','信息提示');
+		return false;
+	}
+	
+	$.ajax({
+		   type : 'post',
+		   url : url,
+		   data : {'op' : 'ajaxpost', 'msguid' : msguid , 'random' : Math.random()},
+		   success : function(msg){
+				if(msg == -1){
+					showErrorMsg('发送失败，缺少收件人对象！','消息提示');
+				} else if(msg == -2){
+					showErrorMsg('发送失败，自己不能给自己发送短消息！','消息提示');
+				} else {
+					$.cover(true);
+					asyncbox.open({
+						id : 'postMessage',
+						title : '发送短消息',
+						url : url,
+						data : {'op' : 'ajaxpost', 'msguid' : msguid , 'random' : Math.random()},
+						width : 510,
+						height : 255,
+						scroll : 'no',
+						callback : function(action) {
+							if (action == 'close'){
+								$.cover(false);
+							}	
+						}
+					});	
+				}
+		   }
+	});	
+}
+
+</script>
+<div class="Blog_left">
+      <div class="Blog_left1 Blog_bg1">
+        <div class="Blog_left1_1">
+			<!-- 专家博客-->
+			<a href="http://www.linxh.blog.chinaunix.net/uid/29140694.html"><img src="builder_files/94_avatar_middle.jpg" onerror="this.onerror=null;this.src='http://passport.ixpub.net/images/noavatar_middle.gif'"></a>
+                        <p><a href="http://www.linxh.blog.chinaunix.net/uid/29140694.html">Bolaven</a></p>
+                     </div>
+        <ul class="Blog_ul1 Blog_noline1">
+          <li>博客访问： 99393 </li>
+          <li>博文数量： 37 </li>
+          <li>博客积分： 0 </li>
+          <!--<li>专家积分： 180</li>-->
+          <li>博客等级： 民兵 </li>
+		  <li>技术积分： 1144 </li>
+          <li>用  户  组：  普通用户</li>
+          <li>注册时间： 2013-08-25 09:41 </li>
+                            </ul>  
+
+
+        
+                <div class="HT_line3 HT_line3_1"></div>
+        <ul class="Blog_ul2">
+          <li><input value="加关注" id="ConcernBtn" onclick="showErrorMsg('操作失败,您需要先登录!', '消息提示', '/site/login.html')" type="button"></li>
+          <li><input value="短消息" id="postMessageBtn" onclick="showErrorMsg('操作失败,您需要先登录!', '消息提示', '/site/login.html')" type="button"></li>
+          <li><input value="论坛" onclick="location.href='http://bbs.chinaunix.net'" type="button"></li>
+          <li><input value="加好友" id="addFriendBtn" onclick="showErrorMsg('操作失败,您需要先登录!', '消息提示', '/site/login.html')" type="button"></li>
+        </ul>
+              </div>
+            <div class="Blog_left2 Blog_bg1">
+        <div class="Blog_tit1">个人简介</div>
+        <p class="Blog_p3">很多事情你之所以觉得它难，不是因为你做不到，只是因为你没有想过自己能做到。</p>
+      </div>
+        
+         
+      <div class="Blog_left2 Blog_bg1">
+        <div class="Blog_tit1">文章分类</div>
+        <div class="Blog_left2_1">
+          <p class="Blog_p4"><a href="http://www.linxh.blog.chinaunix.net/uid/29140694/list/1.html">全部博文</a>（37）</p>
+          <ul id="blogCla">
+                            <li><a href="http://www.linxh.blog.chinaunix.net/uid/29140694/cid-185128-list-1.html" title="jvm">jvm</a>（0）
+                                </li>
+                            <li><a href="http://www.linxh.blog.chinaunix.net/uid/29140694/cid-194607-list-1.html" title="maven">maven</a>（1）
+                                </li>
+                            <li><a href="http://www.linxh.blog.chinaunix.net/uid/29140694/cid-188958-list-1.html" title="设计模式">设计模式</a>（14）
+                                </li>
+                            <li><a href="http://www.linxh.blog.chinaunix.net/uid/29140694/cid-186075-list-1.html" title="NoSQL">NoSQL</a>（0）
+                                </li>
+                            <li><a href="http://www.linxh.blog.chinaunix.net/uid/29140694/cid-186074-list-1.html" title="oracle">oracle</a>（0）
+                                </li>
+                            <li><a href="http://www.linxh.blog.chinaunix.net/uid/29140694/cid-186044-list-1.html" title="分布式">分布式</a>（0）
+                                </li>
+                            <li><a href="http://www.linxh.blog.chinaunix.net/uid/29140694/cid-186043-list-1.html" title="静态化">静态化</a>（0）
+                                </li>
+                            <li><a href="http://www.linxh.blog.chinaunix.net/uid/29140694/cid-186042-list-1.html" title="hadoop">hadoop</a>（0）
+                                </li>
+                            <li><a href="http://www.linxh.blog.chinaunix.net/uid/29140694/cid-186041-list-1.html" title="负载均衡">负载均衡</a>（0）
+                                </li>
+                            <li><a href="http://www.linxh.blog.chinaunix.net/uid/29140694/cid-186035-list-1.html" title="Web容器">Web容器</a>（2）
+                                </li>
+                            <li><a href="http://www.linxh.blog.chinaunix.net/uid/29140694/cid-185122-list-1.html" title="编程艺术">编程艺术</a>（0）
+                                </li>
+                            <li><a href="http://www.linxh.blog.chinaunix.net/uid/29140694/cid-185109-list-1.html" title="缓存">缓存</a>（2）
+                                </li>
+                            <li><a href="http://www.linxh.blog.chinaunix.net/uid/29140694/cid-185048-list-1.html" title="架构">架构</a>（0）
+                                </li>
+                            <li><a href="http://www.linxh.blog.chinaunix.net/uid/29140694/cid-184952-list-1.html" title="mysql">mysql</a>（0）
+                                </li>
+                            <li><a href="http://www.linxh.blog.chinaunix.net/uid/29140694/cid-183939-list-1.html" title="杂谈">杂谈</a>（3）
+                                </li>
+                            <li><a href="http://www.linxh.blog.chinaunix.net/uid/29140694/cid-183646-list-1.html" title="页面样式">页面样式</a>（1）
+                                </li>
+                            <li><a href="http://www.linxh.blog.chinaunix.net/uid/29140694/cid-183518-list-1.html" title="JavaScript">JavaScript</a>（1）
+                                </li>
+                            <li><a href="http://www.linxh.blog.chinaunix.net/uid/29140694/cid-181505-list-1.html" title="Linux">Linux</a>（1）
+                                </li>
+                            <li><a href="http://www.linxh.blog.chinaunix.net/uid/29140694/cid-181503-list-1.html" title="安全">安全</a>（0）
+                                </li>
+                            <li><a href="http://www.linxh.blog.chinaunix.net/uid/29140694/cid-181502-list-1.html" title="运维">运维</a>（2）
+                                </li>
+                            <li><a href="http://www.linxh.blog.chinaunix.net/uid/29140694/cid-181501-list-1.html" title="云计算">云计算</a>（0）
+                                </li>
+                            <li><a href="http://www.linxh.blog.chinaunix.net/uid/29140694/cid-181500-list-1.html" title="硬件">硬件</a>（0）
+                                </li>
+                            <li><a href="http://www.linxh.blog.chinaunix.net/uid/29140694/cid-181499-list-1.html" title="Java">Java</a>（6）
+                                </li>
+                            <li><a href="http://www.linxh.blog.chinaunix.net/uid/29140694/cid-181498-list-1.html" title="C/C++">C/C++</a>（4）
+                                </li>
+                            <li><a href="http://www.linxh.blog.chinaunix.net/uid/29140694/cid--1-list-1.html" title="未分配的博文">未分配的博文</a>（0）
+                                </li>
+                      </ul>
+        </div>
+      </div>
+      	              <div class="Blog_left2 Blog_bg1">
+        <div class="Blog_tit1">文章存档</div>
+        <div class="Blog_left2_1" id="blogdtr">
+                    <p class="Blog_p4"><span class="Blog_jia1"></span><a href="http://www.linxh.blog.chinaunix.net/uid/29140694/year-2014-list-1.html">2014年</a>（15）</p>
+          <ul style="display:none;" class="Blog_ul3 zk">
+                        <li><a href="http://www.linxh.blog.chinaunix.net/uid/29140694/year-201406-list-1.html">2014年06月</a>（2）</li>
+                        <li><a href="http://www.linxh.blog.chinaunix.net/uid/29140694/year-201404-list-1.html">2014年04月</a>（2）</li>
+                        <li><a href="http://www.linxh.blog.chinaunix.net/uid/29140694/year-201403-list-1.html">2014年03月</a>（4）</li>
+                        <li><a href="http://www.linxh.blog.chinaunix.net/uid/29140694/year-201402-list-1.html">2014年02月</a>（7）</li>
+                      </ul>
+                    <p class="Blog_p4"><span class="Blog_jia1"></span><a href="http://www.linxh.blog.chinaunix.net/uid/29140694/year-2013-list-1.html">2013年</a>（22）</p>
+          <ul style="display:none;" class="Blog_ul3 zk">
+                        <li><a href="http://www.linxh.blog.chinaunix.net/uid/29140694/year-201312-list-1.html">2013年12月</a>（1）</li>
+                        <li><a href="http://www.linxh.blog.chinaunix.net/uid/29140694/year-201311-list-1.html">2013年11月</a>（11）</li>
+                        <li><a href="http://www.linxh.blog.chinaunix.net/uid/29140694/year-201310-list-1.html">2013年10月</a>（7）</li>
+                        <li><a href="http://www.linxh.blog.chinaunix.net/uid/29140694/year-201308-list-1.html">2013年08月</a>（3）</li>
+                      </ul>
+                  </div>
+      </div>
+      	  	  	        <div class="Blog_left2 Blog_bg1">
+        <div class="Blog_tit1">最近访客</div>
+        <ul class="Blog_ul4">
+                    <li><a href="http://www.linxh.blog.chinaunix.net/uid/30229696.html"><img src="builder_files/noavatar_small.gif" onerror="this.onerror=null;this.src='http://passport.ixpub.net/images/noavatar_small.gif'"></a>
+            <p><a href="http://www.linxh.blog.chinaunix.net/uid/30229696.html" title="ygh2234">ygh2234</a></p>
+          </li>
+                    <li><a href="http://www.linxh.blog.chinaunix.net/uid/24658181.html"><img src="builder_files/noavatar_small.gif" onerror="this.onerror=null;this.src='http://passport.ixpub.net/images/noavatar_small.gif'"></a>
+            <p><a href="http://www.linxh.blog.chinaunix.net/uid/24658181.html" title="ycxzfforever">ycxzffor</a></p>
+          </li>
+                    <li><a href="http://www.linxh.blog.chinaunix.net/uid/21899419.html"><img src="builder_files/19_avatar_small.jpg" onerror="this.onerror=null;this.src='http://passport.ixpub.net/images/noavatar_small.gif'"></a>
+            <p><a href="http://www.linxh.blog.chinaunix.net/uid/21899419.html" title="mqiezi">mqiezi</a></p>
+          </li>
+                    <li><a href="http://www.linxh.blog.chinaunix.net/uid/10141286.html"><img src="builder_files/noavatar_small.gif" onerror="this.onerror=null;this.src='http://passport.ixpub.net/images/noavatar_small.gif'"></a>
+            <p><a href="http://www.linxh.blog.chinaunix.net/uid/10141286.html" title="yeshaoting">yeshaoti</a></p>
+          </li>
+                    <li><a href="http://www.linxh.blog.chinaunix.net/uid/30366310.html"><img src="builder_files/noavatar_small.gif" onerror="this.onerror=null;this.src='http://passport.ixpub.net/images/noavatar_small.gif'"></a>
+            <p><a href="http://www.linxh.blog.chinaunix.net/uid/30366310.html" title="it_manito">it_manit</a></p>
+          </li>
+                    <li><a href="http://www.linxh.blog.chinaunix.net/uid/30391569.html"><img src="builder_files/noavatar_small.gif" onerror="this.onerror=null;this.src='http://passport.ixpub.net/images/noavatar_small.gif'"></a>
+            <p><a href="http://www.linxh.blog.chinaunix.net/uid/30391569.html" title="shell_hua">shell_hu</a></p>
+          </li>
+                    <li><a href="http://www.linxh.blog.chinaunix.net/uid/30361018.html"><img src="builder_files/18_avatar_small.jpg" onerror="this.onerror=null;this.src='http://passport.ixpub.net/images/noavatar_small.gif'"></a>
+            <p><a href="http://www.linxh.blog.chinaunix.net/uid/30361018.html" title="kaopuso">kaopuso</a></p>
+          </li>
+                    <li><a href="http://www.linxh.blog.chinaunix.net/uid/30365239.html"><img src="builder_files/noavatar_small.gif" onerror="this.onerror=null;this.src='http://passport.ixpub.net/images/noavatar_small.gif'"></a>
+            <p><a href="http://www.linxh.blog.chinaunix.net/uid/30365239.html" title="wemmhy">wemmhy</a></p>
+          </li>
+                    <li><a href="http://www.linxh.blog.chinaunix.net/uid/7654920.html"><img src="builder_files/noavatar_small.gif" onerror="this.onerror=null;this.src='http://passport.ixpub.net/images/noavatar_small.gif'"></a>
+            <p><a href="http://www.linxh.blog.chinaunix.net/uid/7654920.html" title="cloes">cloes</a></p>
+          </li>
+                  </ul>
+      </div>
+	           <div class="Blog_left2 Blog_left3 Blog_bg1">
+        <div class="Blog_tit1">微信关注</div>
+        <div class="">
+                <div class="" style="float:left; margin-right:5px;">
+                 <img alt="" src="builder_files/IT168.jpg" height="90" width="90">
+                 </div><br>
+                <div class="" style="margin-top:10px;">
+                 <p class="">
+                         IT168企业级官微
+                </p>
+                 <p class="">
+
+                 <br><br>
+                 微信号：IT168qiye
+                </p>
+                </div>
+        </div>
+<hr style="clear:both;" size="1">
+        <div class="" style="clear:both;">
+                <div class="" style="float:left; margin-right:5px;">
+                 <img alt="" src="builder_files/itpub.jpg" height="90" width="90">
+                 </div><br>
+                <div class="" style="margin-top:10px;">
+                 <p class="">
+                         系统架构师大会
+                </p>
+                 <p class="">
+
+                 <br><br>
+                 微信号：SACC2013
+                </p>
+                </div>
+        </div>
+
+</div>
+      <div class="Blog_left2 Blog_bg1">
+        <div class="Blog_tit1">订阅</div>
+        <ul class="Blog_ul5">
+          <li><a href="http://www.linxh.blog.chinaunix.net/blog/rss/uid/29140694.html" class="Blog_a4"></a></li>
+          <li><a href="http://www.google.com/ig/add?feedurl=http%3A%2F%2Fblog.chinaunix.net%2Fuid%2F29140694.html" class="Blog_a5"></a></li>
+        </ul>
+      </div>
+      <div class="Blog_left2 Blog_left3 Blog_bg1">
+        <div class="Blog_tit1">推荐博文</div>
+        <ul class="Blog_ul6">
+				  			<li>·<a href="http://www.linxh.blog.chinaunix.net/uid-26252206-id-5179365.html" title="mysql备份还原之mysqldump命令与source命令">mysql备份还原之mysqldump命...</a></li>
+		  			<li>·<a href="http://www.linxh.blog.chinaunix.net/uid-30282771-id-5176971.html" title="内存管理（二）struct page">内存管理（二）struct page...</a></li>
+		  			<li>·<a href="http://www.linxh.blog.chinaunix.net/uid-30233942-id-5176844.html" title="python实现将IP地址转换成长整形">python实现将IP地址转换成长...</a></li>
+		  			<li>·<a href="http://www.linxh.blog.chinaunix.net/uid-21209537-id-5176375.html" title="测试mysql事务隔离级别">测试mysql事务隔离级别...</a></li>
+		  			<li>·<a href="http://www.linxh.blog.chinaunix.net/uid-301743-id-5178586.html" title="Jetty JNDI开发实战(上)">Jetty JNDI开发实战(上)</a></li>
+		  						  			<li>·<a href="http://blog.itpub.net/23718752/viewspace-1786927" title="KDB和Oracle的性能pk小记">KDB和Oracle的性能pk小记...</a></li>
+		  			<li>·<a href="http://blog.itpub.net/30162081/viewspace-1784677" title="如何在线操作监听日志listener.log">如何在线操作监听日志listene...</a></li>
+		  			<li>·<a href="http://blog.itpub.net/23718752/viewspace-1784544" title="关于奇怪的并行进程分析(一)">关于奇怪的并行进程分析(一)...</a></li>
+		  			<li>·<a href="http://blog.itpub.net/29047826/viewspace-1781780" title="12c RAC关于临时表空间的一点启示">12c RAC关于临时表空间的一点...</a></li>
+		  			<li>·<a href="http://blog.itpub.net/23718752/viewspace-1781581" title="orabbix结合python发送图形报表(二)">orabbix结合python发送图形报...</a></li>
+		  				
+        </ul>
+      </div>
+      <div class="Blog_left2 Blog_left3 Blog_bg1">
+        <div class="Blog_tit1">热词专题</div>
+        <ul class="Blog_ul6">
+          <!--              <li>·<a href="http://www.dataguru.cn/zhuanti/hadoop220peizhi.shtml" target='blank' title='配置hadoop2.2.0格式化namenode问题'></a></li>
+              <li>·<a href="http://www.dataguru.cn/zhuanti/hadoopshouce.shtml" target='blank' title='hadoop2.2.0安装手册'></a></li>-->
+        </ul>
+      </div>
+	  
+
+	</div>
+<script language="javascript">
+$(document).ready(function(){
+    /*目录树JS效果*/
+	$('#blogCla li > span').click(function(){
+		var cla = $(this).attr('class');
+		if(cla == 'Blog_jia1'){
+			//$('#blogCla li > span').removeClass('Blog_jian1').addClass('Blog_jia1');
+			//$('#blogCla li > .zk').css('display', 'none');
+				
+			$(this).removeClass('Blog_jia1').addClass('Blog_jian1');
+            $(this).parent().children('.zk').css('display', 'block');
+		}else{
+			$(this).removeClass('Blog_jian1').addClass('Blog_jia1');
+            $(this).parent().children('.zk').css('display', 'none');
+		}
+	});
+		
+	$('#blogdtr > p > span').click(function(){
+		var cla = $(this).attr('class');
+		if(cla == 'Blog_jia1'){
+			//$('#blogdtr > .Blog_p4 > span').removeClass('Blog_jian1').addClass('Blog_jia1');
+			//$('#blogdtr ul').css('display', 'none');
+				
+			$(this).removeClass('Blog_jia1').addClass('Blog_jian1');
+            $(this).parent().next().css('display', 'block');
+		}else{
+			$(this).removeClass('Blog_jian1').addClass('Blog_jia1');
+            $(this).parent().next().css('display', 'none');
+		}
+	});
+});
+</script>    <!-- 右 -->
+    <div class="Blog_right1">
+      <div class="Blog_right1_1 Blog_right1_11">
+        <div class="Blog_right1_2 ">
+			<div class="img2"></div><!--推荐博文-->
+          <div class="Blog_tit4 Blog_tit5">
+                        <b class="Blog_b1"></b>
+            <a href="http://www.linxh.blog.chinaunix.net/uid-29140694-id-4105980.html">【JAVA】设计模式之建造者模式（生成器模式）的使用分析</a>
+            <em>2014-02-13 22:50:12</em>
+          </div>
+          <div class="Blog_con2">
+            <div class="Blog_con3">
+              <p>分类： <span>Java</span></p>
+			                <p></p>
+            </div>
+           <div class="Blog_wz1" style="word-wrap: break-word;">
+			<p>
+	建造者模式也叫生成器模式，23种设计模式之一，属于创建类模式。<br>
+在描述建造者模式之前，大家首先要明白一个道理就是任何设计模式的产生都是为了解决某一类问题，更准确的说是为了应对某一种变化，设计模式就是封装变化，
+把变化的部分和不变的部分隔离开。设计模式的好处就是运用面向对象的思想让我们能够更简单方便的应对外界需求的变化。比如工厂模式的产生是由于我们要根据
+外界的需求生产出不同类型的产品，这一变化就是外界的需求是不确定的，工厂模式就是为了应对这种变化而产生。那建造者模式是为了应对哪一种变化呢？<br>
+首先还是看下GOF对建造者模式的定义：将一个复杂对象的构建与其表示相分离，使得同样的构建过程可以创建出不同的表示。GOF的语言一般都比较言简意赅，但也有点晦涩难读。<br>
+看到有网友用KFC的例子来描述建造者模式，我觉得还是比较贴近的，我们也借用这个例子描述一下：<br>
+假设KFC推出两种套餐：奥尔良鸡腿堡套餐和香辣鸡腿堡套餐，奥尔良套餐包括：一个奥尔良鸡腿堡、一个炸鸡翅、一杯雪碧。鸡腿堡套餐包括：一个香辣鸡腿堡、一份薯条、一杯可乐。每份套餐都是：主食、副食、饮料。<br>
+KFC服务员要根据顾客的要求来提供套餐，那这个需求里面什么是固定的，什么是变化的呢？很明显顾客都是要的套餐，顾客的目的是一样的。 套餐里面都是主食、副食、饮料，这也是固定的。至于主食是什么、副食是什么、饮料是什么这个是变化的。<br>
+在软件系统中，有时候面临着“一个复杂对象”的创建工作，其通常由各个部分的子对象用一定的算法构成，由于需求的变化，这个复杂对象的各个部分经常面临着剧烈的变化，但是将他们组合在一起的算法却相对稳定。当遇到这种场景时，你就可以考虑能否用建造者模式实现了。<br>
+下面我们用一个例子描述下建造者模式的代码实现过程。<br>
+<br>
+<img style="width:678px;height:307px;" alt="" src="builder_files/29140694_13923002630AsK.jpg" height="320" width="700"><br>
+1、第一个文件House.java<br>
+	</p><div>
+		<div class="codeheads">
+			<p>
+				点击(<span style="color: red; cursor: pointer;" .="code_hide('code734')">此处</span>)折叠或打开
+			</p>
+		</div>
+		<div id="code734" class="codeText">
+			<ol style="margin:0px 1px 0px 0px;padding:5px 0pt;" class="dp-css none_number" start="1">
+				<li>
+					<span style="color:#000000;"><span style="color:#0000FF;">package</span> com<span style="color:#0000CC;">.</span>myjava<span style="color:#0000CC;">.</span>interview<span style="color:#0000CC;">.</span>enchiridion<span style="color:#0000CC;">.</span>designpattern<span style="color:#0000CC;">.</span>builderpattern<span style="color:#0000CC;">.</span>model<span style="color:#0000CC;">;</span><br>
+</span> 
+				</li>
+				<li>
+					<br>
+				</li>
+				<li>
+					<span style="color:#0000FF;">public</span> <span style="color:#0000FF;">class</span> House <span style="color:#0000CC;">{</span><br>
+				</li>
+				<li>
+					<br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#0000FF;">private</span> <span style="color:#FF0000;">String</span> door<span style="color:#0000CC;">;</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;<br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#0000FF;">private</span> <span style="color:#FF0000;">String</span> <span style="color:#FF0000;">floor</span><span style="color:#0000CC;">;</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;<br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#0000FF;">private</span> <span style="color:#FF0000;">String</span> wall<span style="color:#0000CC;">;</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;<br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#0000FF;">private</span> <span style="color:#FF0000;">String</span> windows<span style="color:#0000CC;">;</span><br>
+				</li>
+				<li>
+					<br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#0000FF;">public</span> <span style="color:#FF0000;">String</span> getDoor<span style="color:#0000CC;">(</span><span style="color:#0000CC;">)</span> <span style="color:#0000CC;">{</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#0000FF;">return</span> door<span style="color:#0000CC;">;</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#0000CC;">}</span><br>
+				</li>
+				<li>
+					<br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#0000FF;">public</span> <span style="color:#0000FF;">void</span> setDoor<span style="color:#0000CC;">(</span><span style="color:#FF0000;">String</span> door<span style="color:#0000CC;">)</span> <span style="color:#0000CC;">{</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#0000FF;">this</span><span style="color:#0000CC;">.</span>door <span style="color:#0000CC;">=</span> door<span style="color:#0000CC;">;</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#0000CC;">}</span><br>
+				</li>
+				<li>
+					<br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#0000FF;">public</span> <span style="color:#FF0000;">String</span> getFloor<span style="color:#0000CC;">(</span><span style="color:#0000CC;">)</span> <span style="color:#0000CC;">{</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#0000FF;">return</span> <span style="color:#FF0000;">floor</span><span style="color:#0000CC;">;</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#0000CC;">}</span><br>
+				</li>
+				<li>
+					<br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#0000FF;">public</span> <span style="color:#0000FF;">void</span> setFloor<span style="color:#0000CC;">(</span><span style="color:#FF0000;">String</span> <span style="color:#FF0000;">floor</span><span style="color:#0000CC;">)</span> <span style="color:#0000CC;">{</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#0000FF;">this</span><span style="color:#0000CC;">.</span><span style="color:#FF0000;">floor</span> <span style="color:#0000CC;">=</span> <span style="color:#FF0000;">floor</span><span style="color:#0000CC;">;</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#0000CC;">}</span><br>
+				</li>
+				<li>
+					<br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#0000FF;">public</span> <span style="color:#FF0000;">String</span> getWall<span style="color:#0000CC;">(</span><span style="color:#0000CC;">)</span> <span style="color:#0000CC;">{</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#0000FF;">return</span> wall<span style="color:#0000CC;">;</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#0000CC;">}</span><br>
+				</li>
+				<li>
+					<br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#0000FF;">public</span> <span style="color:#0000FF;">void</span> setWall<span style="color:#0000CC;">(</span><span style="color:#FF0000;">String</span> wall<span style="color:#0000CC;">)</span> <span style="color:#0000CC;">{</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#0000FF;">this</span><span style="color:#0000CC;">.</span>wall <span style="color:#0000CC;">=</span> wall<span style="color:#0000CC;">;</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#0000CC;">}</span><br>
+				</li>
+				<li>
+					<br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#0000FF;">public</span> <span style="color:#FF0000;">String</span> getWindows<span style="color:#0000CC;">(</span><span style="color:#0000CC;">)</span> <span style="color:#0000CC;">{</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#0000FF;">return</span> windows<span style="color:#0000CC;">;</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#0000CC;">}</span><br>
+				</li>
+				<li>
+					<br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#0000FF;">public</span> <span style="color:#0000FF;">void</span> setWindows<span style="color:#0000CC;">(</span><span style="color:#FF0000;">String</span> windows<span style="color:#0000CC;">)</span> <span style="color:#0000CC;">{</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#0000FF;">this</span><span style="color:#0000CC;">.</span>windows <span style="color:#0000CC;">=</span> windows<span style="color:#0000CC;">;</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#0000CC;">}</span><br>
+				</li>
+				<li>
+					<span style="color:#0000CC;">}</span> 
+				</li>
+			</ol>
+		</div>
+	</div>
+2、第二个文件ChinaStyleHouse.java<br>
+	<div>
+		<div class="codeheads">
+			<p>
+				点击(<span style="color: red; cursor: pointer;" .="code_hide('code257')">此处</span>)折叠或打开
+			</p>
+		</div>
+		<div id="code257" class="codeText">
+			<ol style="margin:0px 1px 0px 0px;padding:5px 0pt;" class="dp-css none_number" start="1">
+				<li>
+					<span style="color:#000000;"><span style="color:#0000FF;">package</span> com<span style="color:#0000CC;">.</span>myjava<span style="color:#0000CC;">.</span>interview<span style="color:#0000CC;">.</span>enchiridion<span style="color:#0000CC;">.</span>designpattern<span style="color:#0000CC;">.</span>builderpattern<span style="color:#0000CC;">.</span>model<span style="color:#0000CC;">;</span><br>
+</span> 
+				</li>
+				<li>
+					<br>
+				</li>
+				<li>
+					<span style="color:#0000FF;">public</span> <span style="color:#0000FF;">class</span> ChinaStyleHouse <span style="color:#0000FF;">extends</span> House <span style="color:#0000CC;">{</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#FF9900;">//do something here</span><br>
+				</li>
+				<li>
+					<span style="color:#0000CC;">}</span> 
+				</li>
+			</ol>
+		</div>
+	</div>
+<br>
+3、第三个文件BritishStyleHouse.java<br>
+	<div>
+		<div class="codeheads">
+			<p>
+				点击(<span style="color: red; cursor: pointer;" .="code_hide('code130')">此处</span>)折叠或打开
+			</p>
+		</div>
+		<div id="code130" class="codeText">
+			<ol style="margin:0px 1px 0px 0px;padding:5px 0pt;" class="dp-css none_number" start="1">
+				<li>
+					<span style="color:#000000;"><span style="color:#0000FF;">package</span> com<span style="color:#0000CC;">.</span>myjava<span style="color:#0000CC;">.</span>interview<span style="color:#0000CC;">.</span>enchiridion<span style="color:#0000CC;">.</span>designpattern<span style="color:#0000CC;">.</span>builderpattern<span style="color:#0000CC;">.</span>model<span style="color:#0000CC;">;</span><br>
+</span> 
+				</li>
+				<li>
+					<br>
+				</li>
+				<li>
+					<span style="color:#0000FF;">public</span> <span style="color:#0000FF;">class</span> BritishStyleHouse <span style="color:#0000FF;">extends</span> House <span style="color:#0000CC;">{</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#FF9900;">//do something here</span><br>
+				</li>
+				<li>
+					<span style="color:#0000CC;">}</span> 
+				</li>
+			</ol>
+		</div>
+	</div>
+<br>
+4、第四个文件IHouseBuilder.java<br>
+&nbsp;
+	<div>
+		<div class="codeheads">
+			<p>
+				点击(<span style="color: red; cursor: pointer;" .="code_hide('code818')">此处</span>)折叠或打开
+			</p>
+		</div>
+		<div id="code818" class="codeText">
+			<ol style="margin:0px 1px 0px 0px;padding:5px 0pt;" class="dp-css none_number" start="1">
+				<li>
+					<span style="color:#000000;"><span style="color:#0000FF;">package</span> com<span style="color:#0000CC;">.</span>myjava<span style="color:#0000CC;">.</span>interview<span style="color:#0000CC;">.</span>enchiridion<span style="color:#0000CC;">.</span>designpattern<span style="color:#0000CC;">.</span>builderpattern<span style="color:#0000CC;">.</span>service<span style="color:#0000CC;">;</span><br>
+</span> 
+				</li>
+				<li>
+					<br>
+				</li>
+				<li>
+					<span style="color:#0000FF;">import</span> com<span style="color:#0000CC;">.</span>myjava<span style="color:#0000CC;">.</span>interview<span style="color:#0000CC;">.</span>enchiridion<span style="color:#0000CC;">.</span>designpattern<span style="color:#0000CC;">.</span>builderpattern<span style="color:#0000CC;">.</span>model<span style="color:#0000CC;">.</span>House<span style="color:#0000CC;">;</span><br>
+				</li>
+				<li>
+					<br>
+				</li>
+				<li>
+					<span style="color:#0000FF;">public</span> <span style="color:#0000FF;">interface</span> IHouseBuilder <span style="color:#0000CC;">{</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;<br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#FF9900;">/**<br>
+</span> 
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp; * 建造墙壁<br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp; */<br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#0000FF;">public</span> <span style="color:#0000FF;">void</span> buildWall<span style="color:#0000CC;">(</span><span style="color:#0000CC;">)</span><span style="color:#0000CC;">;</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;<br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#FF9900;">/**<br>
+</span> 
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp; * 建造房门<br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp; */<br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#0000FF;">public</span> <span style="color:#0000FF;">void</span> buildDoor<span style="color:#0000CC;">(</span><span style="color:#0000CC;">)</span><span style="color:#0000CC;">;</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;<br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#FF9900;">/**<br>
+</span> 
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp; * 建造地板<br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp; */<br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#0000FF;">public</span> <span style="color:#0000FF;">void</span> buildFloor<span style="color:#0000CC;">(</span><span style="color:#0000CC;">)</span><span style="color:#0000CC;">;</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;<br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#FF9900;">/**<br>
+</span> 
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp; * 建造窗户<br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp; * @return<br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp; */<br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#0000FF;">public</span> <span style="color:#0000FF;">void</span> buildWindows<span style="color:#0000CC;">(</span><span style="color:#0000CC;">)</span><span style="color:#0000CC;">;</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;<br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#FF9900;">/**<br>
+</span> 
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp; * 返回创造完成的对象<br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp; * @return<br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp; */<br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#0000FF;">public</span> House getHouse<span style="color:#0000CC;">(</span><span style="color:#0000CC;">)</span><span style="color:#0000CC;">;</span><br>
+				</li>
+				<li>
+					<span style="color:#0000CC;">}</span> 
+				</li>
+			</ol>
+		</div>
+	</div>
+<br>
+5、第五个文件ChinaStyleHouseBuilderImpl.java<br>
+&nbsp;
+	<div>
+		<div class="codeheads">
+			<p>
+				点击(<span style="color: red; cursor: pointer;" .="code_hide('code838')">此处</span>)折叠或打开
+			</p>
+		</div>
+		<div id="code838" class="codeText">
+			<ol style="margin:0px 1px 0px 0px;padding:5px 0pt;" class="dp-css none_number" start="1">
+				<li>
+					<span style="color:#000000;"><span style="color:#0000FF;">import</span> com<span style="color:#0000CC;">.</span>myjava<span style="color:#0000CC;">.</span>interview<span style="color:#0000CC;">.</span>enchiridion<span style="color:#0000CC;">.</span>designpattern<span style="color:#0000CC;">.</span>builderpattern<span style="color:#0000CC;">.</span>model<span style="color:#0000CC;">.</span>ChinaStyleHouse<span style="color:#0000CC;">;</span><br>
+</span> 
+				</li>
+				<li>
+					<span style="color:#0000FF;">import</span> com<span style="color:#0000CC;">.</span>myjava<span style="color:#0000CC;">.</span>interview<span style="color:#0000CC;">.</span>enchiridion<span style="color:#0000CC;">.</span>designpattern<span style="color:#0000CC;">.</span>builderpattern<span style="color:#0000CC;">.</span>model<span style="color:#0000CC;">.</span>House<span style="color:#0000CC;">;</span><br>
+				</li>
+				<li>
+					<span style="color:#0000FF;">import</span> com<span style="color:#0000CC;">.</span>myjava<span style="color:#0000CC;">.</span>interview<span style="color:#0000CC;">.</span>enchiridion<span style="color:#0000CC;">.</span>designpattern<span style="color:#0000CC;">.</span>builderpattern<span style="color:#0000CC;">.</span>service<span style="color:#0000CC;">.</span>IHouseBuilder<span style="color:#0000CC;">;</span><br>
+				</li>
+				<li>
+					<br>
+				</li>
+				<li>
+					<span style="color:#0000FF;">public</span> <span style="color:#0000FF;">class</span> ChinaStyleHouseBuilderImpl <span style="color:#0000FF;">implements</span> IHouseBuilder<span style="color:#0000CC;">{</span><br>
+				</li>
+				<li>
+					<br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#0000FF;">public</span> House house <span style="color:#0000CC;">=</span> <span style="color:#0000FF;">new</span> ChinaStyleHouse<span style="color:#0000CC;">(</span><span style="color:#0000CC;">)</span><span style="color:#0000CC;">;</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;<br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;@<span style="color:#FF0000;">Override</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#0000FF;">public</span> <span style="color:#0000FF;">void</span> buildDoor<span style="color:#0000CC;">(</span><span style="color:#0000CC;">)</span> <span style="color:#0000CC;">{</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;house<span style="color:#0000CC;">.</span>setDoor<span style="color:#0000CC;">(</span><span style="color:#FF00FF;">"中式风格房门"</span><span style="color:#0000CC;">)</span><span style="color:#0000CC;">;</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#0000CC;">}</span><br>
+				</li>
+				<li>
+					<br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;@<span style="color:#FF0000;">Override</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#0000FF;">public</span> <span style="color:#0000FF;">void</span> buildFloor<span style="color:#0000CC;">(</span><span style="color:#0000CC;">)</span> <span style="color:#0000CC;">{</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;house<span style="color:#0000CC;">.</span>setFloor<span style="color:#0000CC;">(</span><span style="color:#FF00FF;">"中式风格地板"</span><span style="color:#0000CC;">)</span><span style="color:#0000CC;">;</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#0000CC;">}</span><br>
+				</li>
+				<li>
+					<br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;@<span style="color:#FF0000;">Override</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#0000FF;">public</span> <span style="color:#0000FF;">void</span> buildWall<span style="color:#0000CC;">(</span><span style="color:#0000CC;">)</span> <span style="color:#0000CC;">{</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;house<span style="color:#0000CC;">.</span>setWall<span style="color:#0000CC;">(</span><span style="color:#FF00FF;">"中式风格墙壁"</span><span style="color:#0000CC;">)</span><span style="color:#0000CC;">;</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#0000CC;">}</span><br>
+				</li>
+				<li>
+					<br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;@<span style="color:#FF0000;">Override</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#0000FF;">public</span> <span style="color:#0000FF;">void</span> buildWindows<span style="color:#0000CC;">(</span><span style="color:#0000CC;">)</span> <span style="color:#0000CC;">{</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;house<span style="color:#0000CC;">.</span>setWindows<span style="color:#0000CC;">(</span><span style="color:#FF00FF;">"中式风格门窗"</span><span style="color:#0000CC;">)</span><span style="color:#0000CC;">;</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#0000CC;">}</span><br>
+				</li>
+				<li>
+					<br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;@<span style="color:#FF0000;">Override</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#0000FF;">public</span> House getHouse<span style="color:#0000CC;">(</span><span style="color:#0000CC;">)</span> <span style="color:#0000CC;">{</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#0000FF;">return</span> house<span style="color:#0000CC;">;</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#0000CC;">}</span><br>
+				</li>
+				<li>
+					<br>
+				</li>
+				<li>
+					<span style="color:#0000CC;">}</span> 
+				</li>
+			</ol>
+		</div>
+	</div>
+6、第六个文件BritishStyleHouseBuilderImpl.java<br>
+	<div>
+		<div class="codeheads">
+			<p>
+				点击(<span style="color: red; cursor: pointer;" .="code_hide('code727')">此处</span>)折叠或打开
+			</p>
+		</div>
+		<div id="code727" class="codeText">
+			<ol style="margin:0px 1px 0px 0px;padding:5px 0pt;" class="dp-css none_number" start="1">
+				<li>
+					<span style="color:#000000;"><span style="color:#0000FF;">import</span> com<span style="color:#0000CC;">.</span>myjava<span style="color:#0000CC;">.</span>interview<span style="color:#0000CC;">.</span>enchiridion<span style="color:#0000CC;">.</span>designpattern<span style="color:#0000CC;">.</span>builderpattern<span style="color:#0000CC;">.</span>model<span style="color:#0000CC;">.</span>BritishStyleHouse<span style="color:#0000CC;">;</span><br>
+</span> 
+				</li>
+				<li>
+					<span style="color:#0000FF;">import</span> com<span style="color:#0000CC;">.</span>myjava<span style="color:#0000CC;">.</span>interview<span style="color:#0000CC;">.</span>enchiridion<span style="color:#0000CC;">.</span>designpattern<span style="color:#0000CC;">.</span>builderpattern<span style="color:#0000CC;">.</span>model<span style="color:#0000CC;">.</span>House<span style="color:#0000CC;">;</span><br>
+				</li>
+				<li>
+					<span style="color:#0000FF;">import</span> com<span style="color:#0000CC;">.</span>myjava<span style="color:#0000CC;">.</span>interview<span style="color:#0000CC;">.</span>enchiridion<span style="color:#0000CC;">.</span>designpattern<span style="color:#0000CC;">.</span>builderpattern<span style="color:#0000CC;">.</span>service<span style="color:#0000CC;">.</span>IHouseBuilder<span style="color:#0000CC;">;</span><br>
+				</li>
+				<li>
+					<br>
+				</li>
+				<li>
+					<span style="color:#0000FF;">public</span> <span style="color:#0000FF;">class</span> BritishStyleHouseBuilderImpl <span style="color:#0000FF;">implements</span> IHouseBuilder <span style="color:#0000CC;">{</span><br>
+				</li>
+				<li>
+					<br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#0000FF;">public</span> House house <span style="color:#0000CC;">=</span> <span style="color:#0000FF;">new</span> BritishStyleHouse<span style="color:#0000CC;">(</span><span style="color:#0000CC;">)</span><span style="color:#0000CC;">;</span> <br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;<br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;@<span style="color:#FF0000;">Override</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#0000FF;">public</span> <span style="color:#0000FF;">void</span> buildDoor<span style="color:#0000CC;">(</span><span style="color:#0000CC;">)</span> <span style="color:#0000CC;">{</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;house<span style="color:#0000CC;">.</span>setDoor<span style="color:#0000CC;">(</span><span style="color:#FF00FF;">"英式风格门"</span><span style="color:#0000CC;">)</span><span style="color:#0000CC;">;</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#0000CC;">}</span><br>
+				</li>
+				<li>
+					<br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;@<span style="color:#FF0000;">Override</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#0000FF;">public</span> <span style="color:#0000FF;">void</span> buildFloor<span style="color:#0000CC;">(</span><span style="color:#0000CC;">)</span> <span style="color:#0000CC;">{</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;house<span style="color:#0000CC;">.</span>setFloor<span style="color:#0000CC;">(</span><span style="color:#FF00FF;">"英式风格地板"</span><span style="color:#0000CC;">)</span><span style="color:#0000CC;">;</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#0000CC;">}</span><br>
+				</li>
+				<li>
+					<br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;@<span style="color:#FF0000;">Override</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#0000FF;">public</span> <span style="color:#0000FF;">void</span> buildWall<span style="color:#0000CC;">(</span><span style="color:#0000CC;">)</span> <span style="color:#0000CC;">{</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;house<span style="color:#0000CC;">.</span>setWall<span style="color:#0000CC;">(</span><span style="color:#FF00FF;">"英式风格地板"</span><span style="color:#0000CC;">)</span><span style="color:#0000CC;">;</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#0000CC;">}</span><br>
+				</li>
+				<li>
+					<br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;@<span style="color:#FF0000;">Override</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#0000FF;">public</span> <span style="color:#0000FF;">void</span> buildWindows<span style="color:#0000CC;">(</span><span style="color:#0000CC;">)</span> <span style="color:#0000CC;">{</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;house<span style="color:#0000CC;">.</span>setWindows<span style="color:#0000CC;">(</span><span style="color:#FF00FF;">"英式风格窗户"</span><span style="color:#0000CC;">)</span><span style="color:#0000CC;">;</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#0000CC;">}</span><br>
+				</li>
+				<li>
+					<br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;@<span style="color:#FF0000;">Override</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#0000FF;">public</span> House getHouse<span style="color:#0000CC;">(</span><span style="color:#0000CC;">)</span> <span style="color:#0000CC;">{</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#0000FF;">return</span> house<span style="color:#0000CC;">;</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#0000CC;">}</span><br>
+				</li>
+				<li>
+					<br>
+				</li>
+				<li>
+					<span style="color:#0000CC;">}</span> 
+				</li>
+			</ol>
+		</div>
+<br>
+7、第七个文件HouseDirector.java<br>
+		<div>
+			<div class="codeheads">
+				<p>
+					点击(<span style="color: red; cursor: pointer;" .="code_hide('code888')">此处</span>)折叠或打开
+				</p>
+			</div>
+			<div id="code888" class="codeText">
+				<ol style="margin:0px 1px 0px 0px;padding:5px 0pt;" class="dp-css none_number" start="1">
+					<li>
+						<span style="color:#000000;"><span style="color:#0000FF;">package</span> com<span style="color:#0000CC;">.</span>myjava<span style="color:#0000CC;">.</span>interview<span style="color:#0000CC;">.</span>enchiridion<span style="color:#0000CC;">.</span>designpattern<span style="color:#0000CC;">.</span>builderpattern<span style="color:#0000CC;">.</span>director<span style="color:#0000CC;">;</span><br>
+</span> 
+					</li>
+					<li>
+						<br>
+					</li>
+					<li>
+						<span style="color:#0000FF;">import</span> com<span style="color:#0000CC;">.</span>myjava<span style="color:#0000CC;">.</span>interview<span style="color:#0000CC;">.</span>enchiridion<span style="color:#0000CC;">.</span>designpattern<span style="color:#0000CC;">.</span>builderpattern<span style="color:#0000CC;">.</span>model<span style="color:#0000CC;">.</span>House<span style="color:#0000CC;">;</span><br>
+					</li>
+					<li>
+						<span style="color:#0000FF;">import</span> com<span style="color:#0000CC;">.</span>myjava<span style="color:#0000CC;">.</span>interview<span style="color:#0000CC;">.</span>enchiridion<span style="color:#0000CC;">.</span>designpattern<span style="color:#0000CC;">.</span>builderpattern<span style="color:#0000CC;">.</span>service<span style="color:#0000CC;">.</span>IHouseBuilder<span style="color:#0000CC;">;</span><br>
+					</li>
+					<li>
+						<br>
+					</li>
+					<li>
+						<span style="color:#0000FF;">public</span> <span style="color:#0000FF;">class</span> HouseDirector <span style="color:#0000CC;">{</span><br>
+					</li>
+					<li>
+						<br>
+					</li>
+					<li>
+						&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#0000FF;">public</span> House buildHouse<span style="color:#0000CC;">(</span>IHouseBuilder builder<span style="color:#0000CC;">)</span><span style="color:#0000CC;">{</span><br>
+					</li>
+					<li>
+						&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#FF9900;">/**<br>
+</span> 
+					</li>
+					<li>
+						&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; * 建造房门<br>
+					</li>
+					<li>
+						&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; */<br>
+					</li>
+					<li>
+						&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;builder<span style="color:#0000CC;">.</span>buildDoor<span style="color:#0000CC;">(</span><span style="color:#0000CC;">)</span><span style="color:#0000CC;">;</span><br>
+					</li>
+					<li>
+						&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#FF9900;">/**<br>
+</span> 
+					</li>
+					<li>
+						&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; * 建造地板<br>
+					</li>
+					<li>
+						&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; */<br>
+					</li>
+					<li>
+						&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;builder<span style="color:#0000CC;">.</span>buildFloor<span style="color:#0000CC;">(</span><span style="color:#0000CC;">)</span><span style="color:#0000CC;">;</span><br>
+					</li>
+					<li>
+						&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#FF9900;">/**<br>
+</span> 
+					</li>
+					<li>
+						&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; * 建造墙壁<br>
+					</li>
+					<li>
+						&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; */<br>
+					</li>
+					<li>
+						&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;builder<span style="color:#0000CC;">.</span>buildWall<span style="color:#0000CC;">(</span><span style="color:#0000CC;">)</span><span style="color:#0000CC;">;</span><br>
+					</li>
+					<li>
+						&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#FF9900;">/**<br>
+</span> 
+					</li>
+					<li>
+						&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; * 建造窗户<br>
+					</li>
+					<li>
+						&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; */<br>
+					</li>
+					<li>
+						&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;builder<span style="color:#0000CC;">.</span>buildWindows<span style="color:#0000CC;">(</span><span style="color:#0000CC;">)</span><span style="color:#0000CC;">;</span><br>
+					</li>
+					<li>
+						&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br>
+					</li>
+					<li>
+						&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#0000FF;">return</span> builder<span style="color:#0000CC;">.</span>getHouse<span style="color:#0000CC;">(</span><span style="color:#0000CC;">)</span><span style="color:#0000CC;">;</span><br>
+					</li>
+					<li>
+						&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#0000CC;">}</span><br>
+					</li>
+					<li>
+						<span style="color:#0000CC;">}</span> 
+					</li>
+				</ol>
+			</div>
+		</div>
+	</div>
+8、第八个文件TestMain.java<br>
+	<div>
+		<div class="codeheads">
+			<p>
+				点击(<span style="color: red; cursor: pointer;" .="code_hide('code65')">此处</span>)折叠或打开
+			</p>
+		</div>
+		<div id="code65" class="codeText">
+			<ol style="margin:0px 1px 0px 0px;padding:5px 0pt;" class="dp-css none_number" start="1">
+				<li>
+					<span style="color:#000000;"><span style="color:#0000FF;">import</span> com<span style="color:#0000CC;">.</span>myjava<span style="color:#0000CC;">.</span>interview<span style="color:#0000CC;">.</span>enchiridion<span style="color:#0000CC;">.</span>designpattern<span style="color:#0000CC;">.</span>builderpattern<span style="color:#0000CC;">.</span>director<span style="color:#0000CC;">.</span>HouseDirector<span style="color:#0000CC;">;</span><br>
+</span> 
+				</li>
+				<li>
+					<span style="color:#0000FF;">import</span> com<span style="color:#0000CC;">.</span>myjava<span style="color:#0000CC;">.</span>interview<span style="color:#0000CC;">.</span>enchiridion<span style="color:#0000CC;">.</span>designpattern<span style="color:#0000CC;">.</span>builderpattern<span style="color:#0000CC;">.</span>model<span style="color:#0000CC;">.</span>House<span style="color:#0000CC;">;</span><br>
+				</li>
+				<li>
+					<span style="color:#0000FF;">import</span> com<span style="color:#0000CC;">.</span>myjava<span style="color:#0000CC;">.</span>interview<span style="color:#0000CC;">.</span>enchiridion<span style="color:#0000CC;">.</span>designpattern<span style="color:#0000CC;">.</span>builderpattern<span style="color:#0000CC;">.</span>service<span style="color:#0000CC;">.</span>IHouseBuilder<span style="color:#0000CC;">;</span><br>
+				</li>
+				<li>
+					<span style="color:#0000FF;">import</span> com<span style="color:#0000CC;">.</span>myjava<span style="color:#0000CC;">.</span>interview<span style="color:#0000CC;">.</span>enchiridion<span style="color:#0000CC;">.</span>designpattern<span style="color:#0000CC;">.</span>builderpattern<span style="color:#0000CC;">.</span>service<span style="color:#0000CC;">.</span>impl<span style="color:#0000CC;">.</span>BritishStyleHouseBuilderImpl<span style="color:#0000CC;">;</span><br>
+				</li>
+				<li>
+					<span style="color:#0000FF;">import</span> com<span style="color:#0000CC;">.</span>myjava<span style="color:#0000CC;">.</span>interview<span style="color:#0000CC;">.</span>enchiridion<span style="color:#0000CC;">.</span>designpattern<span style="color:#0000CC;">.</span>builderpattern<span style="color:#0000CC;">.</span>service<span style="color:#0000CC;">.</span>impl<span style="color:#0000CC;">.</span>extend<span style="color:#0000CC;">.</span>ChinaStyleAHouseBuilderImpl<span style="color:#0000CC;">;</span><br>
+				</li>
+				<li>
+					<br>
+				</li>
+				<li>
+					<span style="color:#0000FF;">public</span> <span style="color:#0000FF;">class</span> TestClient <span style="color:#0000CC;">{</span><br>
+				</li>
+				<li>
+					<br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#0000FF;">public</span> <span style="color:#0000FF;">static</span> <span style="color:#0000FF;">void</span> main<span style="color:#0000CC;">(</span><span style="color:#FF0000;">String</span> <span style="color:#0000CC;">[</span><span style="color:#0000CC;">]</span> args<span style="color:#0000CC;">)</span><span style="color:#0000CC;">{</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;IHouseBuilder cbuilder <span style="color:#0000CC;">=</span> <span style="color:#0000FF;">new</span> ChinaStyleHouseBuilderImpl<span style="color:#0000CC;">(</span><span style="color:#0000CC;">)</span><span style="color:#0000CC;">;</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;House chouse <span style="color:#0000CC;">=</span> <span style="color:#0000FF;">new</span> HouseDirector<span style="color:#0000CC;">(</span><span style="color:#0000CC;">)</span><span style="color:#0000CC;">.</span>buildHouse<span style="color:#0000CC;">(</span>cbuilder<span style="color:#0000CC;">)</span><span style="color:#0000CC;">;</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#FF0000;">System</span><span style="color:#0000CC;">.</span>out<span style="color:#0000CC;">.</span><span style="color:#FF0000;">println</span><span style="color:#0000CC;">(</span><span style="color:#FF00FF;">"------------------------------"</span><span style="color:#0000CC;">)</span><span style="color:#0000CC;">;</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#FF0000;">System</span><span style="color:#0000CC;">.</span>out<span style="color:#0000CC;">.</span><span style="color:#FF0000;">println</span><span style="color:#0000CC;">(</span><span style="color:#FF00FF;">"房门属性："</span> <span style="color:#0000CC;">+</span> chouse<span style="color:#0000CC;">.</span>getDoor<span style="color:#0000CC;">(</span><span style="color:#0000CC;">)</span><span style="color:#0000CC;">)</span><span style="color:#0000CC;">;</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#FF0000;">System</span><span style="color:#0000CC;">.</span>out<span style="color:#0000CC;">.</span><span style="color:#FF0000;">println</span><span style="color:#0000CC;">(</span><span style="color:#FF00FF;">"墙壁属性："</span> <span style="color:#0000CC;">+</span> chouse<span style="color:#0000CC;">.</span>getWall<span style="color:#0000CC;">(</span><span style="color:#0000CC;">)</span><span style="color:#0000CC;">)</span><span style="color:#0000CC;">;</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#FF0000;">System</span><span style="color:#0000CC;">.</span>out<span style="color:#0000CC;">.</span><span style="color:#FF0000;">println</span><span style="color:#0000CC;">(</span><span style="color:#FF00FF;">"天花板属性："</span> <span style="color:#0000CC;">+</span> chouse<span style="color:#0000CC;">.</span>getFloor<span style="color:#0000CC;">(</span><span style="color:#0000CC;">)</span><span style="color:#0000CC;">)</span><span style="color:#0000CC;">;</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#FF0000;">System</span><span style="color:#0000CC;">.</span>out<span style="color:#0000CC;">.</span><span style="color:#FF0000;">println</span><span style="color:#0000CC;">(</span><span style="color:#FF00FF;">"窗户属性："</span> <span style="color:#0000CC;">+</span> chouse<span style="color:#0000CC;">.</span>getWindows<span style="color:#0000CC;">(</span><span style="color:#0000CC;">)</span><span style="color:#0000CC;">)</span><span style="color:#0000CC;">;</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#FF0000;">System</span><span style="color:#0000CC;">.</span>out<span style="color:#0000CC;">.</span><span style="color:#FF0000;">println</span><span style="color:#0000CC;">(</span><span style="color:#FF00FF;">"------------------------------"</span><span style="color:#0000CC;">)</span><span style="color:#0000CC;">;</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;IHouseBuilder ebuilder <span style="color:#0000CC;">=</span> <span style="color:#0000FF;">new</span> BritishStyleHouseBuilderImpl<span style="color:#0000CC;">(</span><span style="color:#0000CC;">)</span><span style="color:#0000CC;">;</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;House ehouse <span style="color:#0000CC;">=</span> <span style="color:#0000FF;">new</span> HouseDirector<span style="color:#0000CC;">(</span><span style="color:#0000CC;">)</span><span style="color:#0000CC;">.</span>buildHouse<span style="color:#0000CC;">(</span>ebuilder<span style="color:#0000CC;">)</span><span style="color:#0000CC;">;</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#FF0000;">System</span><span style="color:#0000CC;">.</span>out<span style="color:#0000CC;">.</span><span style="color:#FF0000;">println</span><span style="color:#0000CC;">(</span><span style="color:#FF00FF;">"房门属性："</span> <span style="color:#0000CC;">+</span> ehouse<span style="color:#0000CC;">.</span>getDoor<span style="color:#0000CC;">(</span><span style="color:#0000CC;">)</span><span style="color:#0000CC;">)</span><span style="color:#0000CC;">;</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#FF0000;">System</span><span style="color:#0000CC;">.</span>out<span style="color:#0000CC;">.</span><span style="color:#FF0000;">println</span><span style="color:#0000CC;">(</span><span style="color:#FF00FF;">"墙壁属性："</span> <span style="color:#0000CC;">+</span> ehouse<span style="color:#0000CC;">.</span>getWall<span style="color:#0000CC;">(</span><span style="color:#0000CC;">)</span><span style="color:#0000CC;">)</span><span style="color:#0000CC;">;</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#FF0000;">System</span><span style="color:#0000CC;">.</span>out<span style="color:#0000CC;">.</span><span style="color:#FF0000;">println</span><span style="color:#0000CC;">(</span><span style="color:#FF00FF;">"天花板属性："</span> <span style="color:#0000CC;">+</span> ehouse<span style="color:#0000CC;">.</span>getFloor<span style="color:#0000CC;">(</span><span style="color:#0000CC;">)</span><span style="color:#0000CC;">)</span><span style="color:#0000CC;">;</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#FF0000;">System</span><span style="color:#0000CC;">.</span>out<span style="color:#0000CC;">.</span><span style="color:#FF0000;">println</span><span style="color:#0000CC;">(</span><span style="color:#FF00FF;">"窗户属性："</span> <span style="color:#0000CC;">+</span> ehouse<span style="color:#0000CC;">.</span>getWindows<span style="color:#0000CC;">(</span><span style="color:#0000CC;">)</span><span style="color:#0000CC;">)</span><span style="color:#0000CC;">;</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#FF0000;">System</span><span style="color:#0000CC;">.</span>out<span style="color:#0000CC;">.</span><span style="color:#FF0000;">println</span><span style="color:#0000CC;">(</span><span style="color:#FF00FF;">"------------------------------"</span><span style="color:#0000CC;">)</span><span style="color:#0000CC;">;</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#0000CC;">}</span><br>
+				</li>
+				<li>
+					&nbsp;&nbsp;&nbsp;&nbsp;<br>
+				</li>
+				<li>
+					<span style="color:#0000CC;">}</span> 
+				</li>
+			</ol>
+		</div>
+	</div>
+如上功能代码中House对象就如同KFC例子中的套餐，它是一个抽象的概念，而ChinaStyleHouse对象和BritishStyleHouse对象是具体的两种产品如同KFC例子中的奥尔良套餐和鸡腿堡套餐。<br>
+IHouseBuilder是一个抽象的建造者对象，而ChinaStyleHouseBuilderImpl和
+BritishStyleHouseBuilderImpl就是两种产品的实际建造者，它们对应了KFC例子中制造两种套餐的工人，这部分功能的代码相对
+来说是经常变化的，而HouseDiretor中的逻辑相对来说是固定不变的。<br>
+<br>
+&nbsp;9<span style="font-size:12px;">、建造者模式的优点</span> 
+	<p>
+		<span style="font-size:18pt;"><span style="font-size:15px;"><span style="font-size:12px;">（1</span><span style="font-size:12px;">）</span><span style="font-size:12px;">使用建造者模式可以使客户端不必知道产品内部组成的细节。</span></span></span> 
+	</p>
+	<p>
+		<span style="font-size:18pt;"><span style="font-size:15px;"><span style="font-size:12px;">（2</span><span style="font-size:12px;">）</span><span style="font-size:12px;">具</span><span style="font-size:12px;">体的建造者类之间是相互独立的，对系统的扩展非常有利。</span></span></span> 
+	</p>
+	<p>
+		<span style="font-size:18pt;"><span style="font-size:15px;"><span style="font-size:12px;">（3</span><span style="font-size:12px;">）</span><span style="font-size:12px;">由</span><span style="font-size:12px;">于具体的建造者是独立的，因此可以对建造过程逐步细化，而不对其他的模块产生任何影响。</span></span></span> 
+	</p>           </div>
+            <!-- <div class="Blog_con3_1">管理员在2009年8月13日编辑了该文章文章。</div> -->
+            <div class="Blog_con2_1 Blog_con3_2">
+              <div>
+			  <!--<img src="/image/default/tu_8.png">-->
+			  <!-- JiaThis Button BEGIN -->
+				<div data-bd-bind="1441029126971" class="bdsharebuttonbox bdshare-button-style0-16"><a class="bds_more" href="#" data-cmd="more"></a><a class="bds_qzone" title="分享到QQ空间" href="#" data-cmd="qzone"></a><a class="bds_tsina" title="分享到新浪微博" href="#" data-cmd="tsina"></a><a class="bds_tqq" title="分享到腾讯微博" href="#" data-cmd="tqq"></a><a class="bds_renren" title="分享到人人网" href="#" data-cmd="renren"></a><a class="bds_weixin" title="分享到微信" href="#" data-cmd="weixin"></a></div>
+<script>window._bd_share_config={"common":{"bdSnsKey":{},"bdText":"","bdMini":"2","bdMiniList":false,"bdPic":"","bdStyle":"0","bdSize":"16"},"share":{}};with(document)0[(getElementsByTagName('head')[0]||body).appendChild(createElement('script')).src='http://bdimg.share.baidu.com/static/api/js/share.js?v=89860593.js?cdnversion='+~(-new Date()/36e5)];</script>
+				<!-- JiaThis Button END -->
+			  </div>
+              阅读(2144) | 评论(0) | 转发(1) |
+			                <div class="HT_line3"></div>
+            </div>
+            <div class="Blog_con3_3">
+              <div><span id="digg_num">0</span><a href="javascript:void(0)" id="digg" bid="4105980" url="/blog/digg.html"></a></div>
+              <p>上一篇：<a href="http://www.linxh.blog.chinaunix.net/uid-29140694-id-4102757.html">【JAVA】设计模式之策略模式的使用分析</a></p>
+              <p>下一篇：<a href="http://www.linxh.blog.chinaunix.net/uid-29140694-id-4107880.html">【JAVA】设计模式之生产者消费者模式的使用分析</a></p>
+            </div>
+          </div>
+          <div class="Blog_con3_4">
+            <div class="Blog_tit2 Blog_tit6">相关热门文章</div>
+			            <ul class="Blog_ul7">
+						  <li><span class="Blog_span7"></span><a href="http://www.linxh.blog.chinaunix.net/uid-11607429-id-3305376.html" title="Tomcat 6 配置SSI" target="blank">Tomcat 6 配置SSI</a></li>
+						  <li><span class="Blog_span7"></span><a href="http://www.linxh.blog.chinaunix.net/uid-20767210-id-1849618.html" title="JDK1.6官方下载_JDK6官方下载_JDK1.6API(chm)下载_JDK6APICHM中文参" target="blank">JDK1.6官方下载_JDK6官方下载_...</a></li>
+						  <li><span class="Blog_span7"></span><a href="http://www.linxh.blog.chinaunix.net/uid-26284395-id-3260936.html" title="Java 判断文件夹、文件是否存在、否则创建文件夹" target="blank">Java 判断文件夹、文件是否存...</a></li>
+						  <li><span class="Blog_span7"></span><a href="http://www.linxh.blog.chinaunix.net/uid-148384-id-2782673.html" title="MyEclipse6.5下载及注册码" target="blank">MyEclipse6.5下载及注册码...</a></li>
+						  <li><span class="Blog_span7"></span><a href="http://www.linxh.blog.chinaunix.net/uid-23337335-id-2431141.html" title="如何正确(完美)卸载Java/JDK/JRE" target="blank">如何正确(完美)卸载Java/JDK/J...</a></li>
+			            </ul>
+            <ul class="Blog_ul7">
+						  <li><span class="Blog_span6"></span><a href="http://ask.chinaunix.net/question/785970" title="linux dhcp  peizhi roc" target="blank">linux dhcp  peizhi roc</a></li>
+						  <li><span class="Blog_span6"></span><a href="http://ask.chinaunix.net/question/785964" title="关于Unix文件的软链接" target="blank">关于Unix文件的软链接</a></li>
+						  <li><span class="Blog_span6"></span><a href="http://ask.chinaunix.net/question/785935" title="求教这个命令什么意思，我是新手，刚刚学习solaris" target="blank">求教这个命令什么意思，我是新...</a></li>
+						  <li><span class="Blog_span6"></span><a href="http://ask.chinaunix.net/question/785919" title="sed -e &quot;/grep/d&quot; 是什么意思？谢谢" target="blank">sed -e "/grep/d" 是什么意思...</a></li>
+						  <li><span class="Blog_span6"></span><a href="http://ask.chinaunix.net/question/785702" title="谁能够帮我解决LINUX  2.6  10版本驱动" target="blank">谁能够帮我解决LINUX  2.6  10...</a></li>
+			            </ul>
+            <div class="clear"></div>
+          </div>
+		  <!--
+          <div class="Blog_con3_4 Blog_con3_5">
+            <div class="Blog_tit2 Blog_tit7">热门推荐</div>
+            <ul>
+			              <li><a href="" title="" target='blank' ></a></li>
+			            </ul>
+          </div>
+		  -->
+        </div>
+      </div>
+      <div class="Blog_right1_7" id="replyList">
+		<div class="Blog_tit3">给主人留下些什么吧！~~</div>
+				<!--暂无内容-->
+				<!-- 评论分页-->
+		<div class="Blog_right1_6 Blog_right1_12">
+        		</div>
+		<!-- 评论分页-->
+        <div class="Blog_right1_10">
+          <div class="Blog_tit3">评论热议</div>
+		  		 <!--未登录 -->
+        <div class="Blog_right1_8">
+          <div class="nologin_con1"> 请登录后评论。
+            <p><a href="http://www.linxh.blog.chinaunix.net/site/login.html" onclick="linkto()">登录</a> <a href="http://sso.chinaunix.net/Register?return_url=http%3A%2F%2Ft.cublog.com%2F">注册</a></p>
+          </div>
+        </div>
+        <br>
+        <div>
+            <div style="float:left;margin-left:70px;margin-right:10px;">
+             <script type="text/javascript">
+            var cpro_id = "u1625692";
+            </script>
+            <script src="builder_files/c.js" type="text/javascript"></script><div id="BAIDU_DUP_wrapper_u1625692_0"><iframe id="cproIframe_u1625692_1" src="builder_files/acom.htm" marginwidth="0" marginheight="0" scrolling="no" allowtransparency="true" align="center,center" frameborder="0" height="60" width="468"></iframe></div><script charset="utf-8" src="builder_files/acom"></script>
+            </div>
+            <div style="margin-left:10px;">
+            <script type="text/javascript">
+            var cpro_id = "u1625694";
+            </script>
+            <script src="builder_files/c.js" type="text/javascript"></script><div id="BAIDU_DUP_wrapper_u1625694_0"><iframe id="cproIframe_u1625694_2" src="builder_files/acom_002.htm" marginwidth="0" marginheight="0" scrolling="no" allowtransparency="true" align="center,center" frameborder="0" height="60" width="468"></iframe></div><script charset="utf-8" src="builder_files/acom_002"></script>
+            </div>
+        </div>
+		
+        </div>
+      </div>
+    </div>
+  </div>
+  <input id="report_url" value="/blog/ViewReport.html" type="hidden">
+
+<script type="text/javascript">
+  	//测试字符串的长度 一个汉字算2个字节
+	function mb_strlen(str)
+	{
+		var len=str.length;
+		var totalCount=0;
+		for(var i=0;i<len;i++)
+		{
+			var c = str.charCodeAt(i);
+			if ((c >= 0x0001 && c <= 0x007e) || (0xff60<=c && c<=0xff9f)) {
+				totalCount++;
+			}else{
+				totalCount+=2;
+			}
+		}
+		return totalCount;
+	}
+	/*
+	var Util = {};
+	Util.calWbText = function (text, max){
+		if(max === undefined)
+			max = 500;
+		var cLen=0;
+		var matcher = text.match(/[^\x00-\xff]/g),
+			wlen  = (matcher && matcher.length) || 0;
+		//匹配url链接正则 http://***
+		var pattern = /http:\/\/([\w-]+\.)+[\w-]+(\/*[\w-\.\/\?%&=][^\s^\u4e00-\u9fa5]*)?/gi;
+		//匹配的数据存入数组
+		var arrPt = new Array();
+		var i = 0;
+		while((result = pattern.exec(text)) != null){
+			arrPt[i] = result[0];
+			i++;
+		}
+		//替换掉原文本中的链接
+		for(var j = 0;j<arrPt.length;j++){
+			text = text.replace(arrPt[j],"");
+		}
+		//减掉链接所占的长度
+		return Math.floor((max*2 - text.length - wlen)/2 - 12*i);
+	};
+	*/
+	var allowComment = '0';
+	
+	//举报弹出层
+	function showJuBao(url, cid){
+		
+			$.cover(false);
+			asyncbox.open({
+				id  : 'report_thickbox',
+				url : url,
+				title : '举报违规',
+				width : 378,
+				height : 240,
+				scroll : 'no',
+				data : {
+					'cid'	 : cid,
+					'idtype' : 2 ,
+                                        'blogurl' : window.location.href
+				},
+				callback : function(action){
+					if(action == 'close'){
+						$.cover(false);
+					}
+				}
+			});
+	}
+
+	$(function(){
+
+		//创建管理员删除的弹出层
+		$('#admin_article_del').click(function(){
+			$.cover(false);
+			asyncbox.open({
+				id : 'class_thickbox',
+				html : '<div class="HT_layer3_1"><ul><li class="HT_li1">操作原因：<select class="HT_sel7" id="del_type" name="del_type"><option value="广告文章">广告文章</option><option value="违规内容">违规内容</option><option value="标题不明">标题不明</option><option value="文不对题">文不对题</option></select></li><li class="HT_li1" ><input class="HT_btn4" id="admin_delete"  type="button" /></li></ul></div>',
+				title : '选择类型',
+				width : 300,
+				height : 150,
+				scroll : 'no',
+				callback : function(action){
+					if(action == 'close'){
+						$.cover(false);
+					}
+				}
+			});
+		});
+		$('#admin_delete').live('click' , function(){
+			///blog/logicdel/id/3480184/url/%252Fblog%252Findex.html.html
+			var type = $('#del_type').val();
+			var url = '/blog/logicdel/id/4105980/url/%252Fuid%252F29140694.html.html';
+			window.location.href= url + '?type=' + type;
+		});
+
+
+		//顶  js中暂未添加&过滤 
+		$('#digg').live('click' , function(){
+
+			if(isOnLine == '' )
+			{
+				//showErrorMsg('登录之后才能进行此操作' , '消息提示');
+				showErrorMsg('操作失败,您需要先登录!', '消息提示', '/site/login.html');
+				return false;
+			}
+
+			var bid = $('#digg').attr('bid');
+			var url = $('#digg').attr('url');
+
+			var digg_str = $.cookie('digg_id');
+			if(digg_str != null)
+			{
+				var arr= new Array(); //定义一数组
+
+				arr = digg_str.split(","); //字符分割     
+				for( i=0 ; i < arr.length ; i++ )   
+				{   
+					if(bid == arr[i])
+					{
+						showErrorMsg('已经赞过该文章', '消息提示'); 
+						return false;
+					}
+				} 
+			}
+			$.ajax({
+				type:"POST",
+				url:url,	
+				data: {
+					'bid' : bid 
+				},
+				dataType: 'json',
+				success:function(msg){
+					if(msg.error == 0)
+					{
+						var num = parseInt($('#digg_num').html(),10);
+						num += 1;
+						$('#digg_num').html(num);
+						$('#digg').die();
+
+						if(digg_str == null)
+						{
+							$.cookie('digg_id', bid, {expires: 30 , path: '/'});
+						}
+						else
+						{
+							$.cookie('digg_id', digg_str + ',' + bid, {expires: 30 , path: '/'});
+						}
+						showSucceedMsg('谢谢' , '消息提示');
+					}
+					else if(msg.error == 1)
+					{
+						//showErrorMsg(msg.error_content , '消息提示'); 
+						showErrorMsg('操作失败,您需要先登录!', '消息提示', '/site/login.html');
+					}
+					else if(msg.error == 2)
+					{
+						showErrorMsg(msg.error_content , '消息提示'); 
+					}
+				}
+			});
+		});
+		//举报弹出层
+		/*$('.box_report').live('click' , function(){
+			if(isOnLine == '' )
+			{
+				//showErrorMsg('登录之后才能进行此操作' , '消息提示');
+				showErrorMsg('操作失败,您需要先登录!', '消息提示', '/site/login.html');
+				return false;
+			}
+			var url = $('#report_url').val();
+			var cid = $(this).attr('cid');
+			$.cover(false);
+			asyncbox.open({
+				id  : 'report_thickbox',
+				url : url,
+				title : '举报违规',
+				width : 378,
+				height : 240,
+				scroll : 'no',
+				data : {
+					'cid'	 : cid,
+					'idtype' : 2 
+				},
+				callback : function(action){
+					if(action == 'close'){
+						$.cover(false);
+					}
+				}
+			});
+		});*/
+
+
+		//评论相关代码
+		
+		//点击回复显示评论框
+		$('.Blog_a10').live('click' , function(){
+			if(isOnLine == '' )
+			{
+				//showErrorMsg('登录之后才能进行此操作' , '消息提示');
+				showErrorMsg('操作失败,您需要先登录!', '消息提示', '/site/login.html');
+				return false;
+			}
+
+			if(allowComment == 1)
+			{
+				showErrorMsg('该博文不允许评论' , '消息提示'); 
+				return false;
+			}
+			var tid = $(this).attr('toid');//留言作者id
+			var bid = $(this).attr('bid');//blogid
+			var cid = $(this).attr('cid');//留言id
+			var tname = $(this).attr('tname');
+                         			var tpl  = '<div class="Blog_right1_9">';
+				tpl +=	 '<div class="div2">';
+				tpl +=     '<textarea name="" cols="" rows="" class="Blog_ar1_1" id="rmsg">文明上网，理性发言...</textarea>';
+				tpl +=	 '</div>';
+				tpl +=   '<div class="div3">';
+				tpl +=		'<div class="div3_2"><a href="javascript:void(0);" class="Blog_a11" id="quota_sbumit" url="/Comment/PostComment.html" tid="'+tid+'" bid="'+bid+'" cid="'+cid+'" tname="'+tname+'" ></a><a href="javascript:void(0)" id="qx_comment" class="Blog_a12"></a></div>';
+				tpl +=		'<div class="div3_1"><a href="javascript:void(0);" id="mface"><span></span>表情</a></div>';
+				tpl +=		'<div class="clear"></div>';
+				tpl +=	 '</div>';
+				tpl +=  '</div>';
+                                 			$('.z_move_comment').html('');
+			$(this).parents('.Blog_right1_8').find('.z_move_comment').html(tpl).show();
+		});
+		//引用的评论提交
+		$('#quota_sbumit').live('click' , function(){
+
+			if(isOnLine == '' )
+			{
+				//showErrorMsg('登录之后才能进行此操作' , '消息提示');
+				showErrorMsg('操作失败,您需要先登录!', '消息提示', '/site/login.html');
+				return false;
+			}
+
+			var bid   = $(this).attr('bid');
+			var tid   = $(this).attr('tid');//被引用人的id
+			var qid   = $(this).attr('cid');//引用的id
+			var url = $(this).attr('url');
+			var text = $('#rmsg').val();
+			var tname = $(this).attr('tname');
+			if(text == '' || text=='文明上网，理性发言...')
+			{
+				showErrorMsg('评论内容不能为空！' , '消息提示'); 
+				return false;
+			}
+			else
+			{
+				if(mb_strlen(text) > 1000){
+					showErrorMsg('评论内容不能超过500个汉字' , '消息提示'); 
+					return false;
+				}
+			}
+		    $.ajax({
+		        type: "post",
+			    url: url ,
+			    data: {'bid': bid , 'to' : tid , 'qid' : qid , 'text': text , 'tname' : tname },
+				dataType: 'json',
+			    success: function(data){
+				    if(data.code == 1){
+						var tpl =  '<div class="Blog_right1_8">';
+							tpl+=     '<div class="Blog_right_img1"><a href="' +data.info.url+ '" >' + data.info.header + '</a></div>';
+							tpl+=     '<div class="Blog_right_font1">';
+							tpl+=         '<p class="Blog_p5"><span><a href="' +data.info.url+ '" >' + data.info.username + '</a></span>' + data.info.dateline + '</p>';
+							tpl+=         '<p class="Blog_p7"><a href="' + data.info.quota.url + '">' + data.info.quota.username + '</a>：'+ data.info.quota.content + '</p>';
+							tpl+=         '<p class="Blog_p8">' + data.info.content + '</p><span class="span_text1"><a href="javascript:void(0);" class="Blog_a10" toid=' + data.info.fuid + ' bid=' + data.info.bid + ' cid=' + data.info.cid + '  tname = ' + data.info.username + ' >回复</a> | 　<a class="comment_del_mark" style="cursor:pointer" url="' + data.info.delurl + '" >删除</a>　| 　<a href="javascript:showJuBao(\'/blog/ViewReport.html\','+data.info.cid+')" class="box_report" cid="' + data.info.cid + '" >举报</a></span></div>';
+							tpl+=         '<div class="z_move_comment" style="display:none"></div>';
+							tpl+=	      '<div class="Blog_line1"></div></div>';
+							$('#replyList .Blog_right1_8:first').before(tpl);
+							$('.z_move_comment').html('').hide();
+				    }
+					else if(data.code == -1){
+						//showErrorMsg(data.info , '消息提示'); 
+						showErrorMsg('操作失败,您需要先登录!', '消息提示', '/site/login.html');
+			        }
+                },
+			    error: function(){//请求出错处理
+                        
+                }
+			});
+		});
+		//底部发表评论
+		$('#submitmsg').click(function(){
+			if(allowComment == 1)
+			{
+				showErrorMsg('该博文不允许评论' , '消息提示'); 
+				return false;
+			}
+			var bid   = $(this).attr('bid');
+			var toid  = $(this).attr('toid');
+			var text = $('#reply').val();
+			var url = $(this).attr('url');
+			if(text == '' || text=='文明上网，理性发言...')
+			{
+				showErrorMsg('评论内容不能为空！' , '消息提示'); 
+				return false;
+			}
+			else
+			{
+				if(mb_strlen(text) > 1000){
+					showErrorMsg('评论内容不能超过500个汉字' , '消息提示'); 
+					return false;
+				}
+			}
+		    $.ajax({
+		        type: "post",
+			    url: url ,
+			    data: {'bid': bid , 'to' : toid ,'text': text},
+				dataType: 'json',
+			    success: function(data){
+				    if(data.code == 1)
+					{
+						var tpl   = '<div class="Blog_right1_8">';
+							tpl  +=   '<div class="Blog_right_img1"><a href="' +data.info.url+ '" >' + data.info.header + '</a></div>';
+							tpl  +=	  '<div class="Blog_right_font1">';
+							tpl  +=       '<p class="Blog_p5"><span><a href="' +data.info.url+ '" >' + data.info.username + '</a></span>' + data.info.dateline + '</p>';
+							tpl  +=       '<p class="Blog_p6">' + data.info.content + '</p>';
+							tpl  +=		  '<div class="div1"><a href="javascript:void(0);" class="Blog_a10"  toid=' + data.info.fuid + ' bid=' + data.info.bid + ' cid=' + data.info.cid + '>回复</a> | 　<a class="comment_del_mark" style="cursor:pointer" url="' + data.info.delurl + '">删除</a>　| 　<a href="javascript:showJuBao(\'/blog/ViewReport.html\','+data.info.cid+')" class="box_report" cid="' + data.info.cid + '">举报</a></div>';
+							tpl  +=		  '<div class="z_move_comment" style="display:none"></div>';
+							tpl  +=    '</div><div class="Blog_line1"></div></div>';
+							$('.Blog_tit3:first').after(tpl);
+							$('#reply').val('文明上网，理性发言...');
+					}
+					else if(data.code == -1)
+					{
+						showErrorMsg(data.info , '消息提示'); 
+			        }
+                },
+			    error: function(){//请求出错处理
+                        
+                }
+		    });
+			
+		});
+		//底部评论重置
+		$('#reset_comment').click(function(){
+			$('#reply').val('文明上网，理性发言...');
+		});
+		//取消回复
+		$('#qx_comment').live('click' , function(){
+			$('.z_move_comment').html('').hide();
+		});
+
+
+		$('#rmsg, #reply').live({
+		    focus:function(){
+			    if($(this).val() == '文明上网，理性发言...'){
+			        $(this).val('');
+			    }
+			},
+			blur:function(){
+		        if($(this).val() == ''){
+			        $(this).val('文明上网，理性发言...');
+			    }
+			}
+		});
+		//删除留言确认
+		$('.comment_del_mark').live('click' , function(){
+			var url = $(this).attr('url');
+			asyncbox.confirm('删除留言','确认', function(action){
+				if(action == 'ok')
+				{
+					location.href = url;
+				}
+			});
+		});
+		//删除时间确认
+		$('.del_article_id').click(function(){
+			var delurl = $(this).attr('delurl');
+			asyncbox.confirm('删除文章','确认', function(action){
+				if(action == 'ok')
+				{
+					location.href = delurl;
+				}
+			});
+		});
+		/*
+		//字数限制
+		$('#rmsg, #reply').live('keyup', function(){
+			var id = $(this).attr('id');
+			var left = Util.calWbText($(this).val(), 500);
+			var eid = '#errmsg';
+			
+			if(id == 'reply') eid =  '#rerrmsg';
+			if (left >= 0)
+		        $(eid).html('您还可以输入<span>' + left + '</span>字');
+		    else
+		        $(eid).html('<font color="red">您已超出<span>' + Math.abs(left) + '</span>字 </font>');
+		});
+		*/
+		//加载表情
+	    $('#face').qqFace({id : 'facebox1', assign : 'reply', path : '/image/qqface/'});
+	    $('#mface').qqFace({id : 'facebox', assign : 'rmsg', path:'/image/qqface/'});
+	    
+		/*
+		$('#class_one_id').change(function(){
+			alert(123213);
+			var id = parseInt($(this).val() , 10);
+			if(id == 0) return false;
+			$('.hidden_son_class span').each(function( index , dom ){
+				if( dom.attr('cid')  == id )
+				{
+				}
+			});
+		});
+		*/
+		//转载文章
+		var turn_url = "/blog/viewClassPart.html";
+		$('#repost_bar').click(function(){
+			if(isOnLine == '' )
+			{
+				//showErrorMsg('登录之后才能进行此操作' , '消息提示');
+				showErrorMsg('操作失败,您需要先登录!', '消息提示', '/site/login.html');
+				return false;
+			}
+			var id = $(this).attr('bid');
+			asyncbox.open({
+				id  : 'turn_class_thickbox',
+				url : turn_url,
+				title : '转载文章',
+				width : 330,
+				height : 131,
+				scroll : 'no',
+				data : {
+					'id'	 : id
+				},
+				callback : function(action){
+					if(action == 'close'){
+						$.cover(false);
+					}
+				}
+			});
+		});
+		/*
+	    //转发文章
+	    $('#repost_bar').live('click' , function(){
+			if(isOnLine == '' )
+			{
+				//showErrorMsg('登录之后才能进行此操作' , '消息提示');
+				showErrorMsg('操作失败,您需要先登录!', '消息提示', '/site/login.html');
+				return false;
+			}
+	    	var bid  = $(this).attr('bid');
+	    	var url  = $(this).attr('url');
+	    	asyncbox.confirm('转载文章','确认', function(action){
+	    	  if(action == 'ok'){
+	    	    $.ajax({
+				type:"POST",
+				url:url,	
+				data: {
+					'bid' : bid 
+				},
+				dataType: 'json',
+				success:function(msg){
+				  if(msg.error == 0){
+				    showSucceedMsg('转发成功！', '消息提示');
+				  }else if(msg.error == 1){
+				    //location.href = '/index.php?r=site/login';
+					showErrorMsg('操作失败,您需要先登录!', '消息提示', '/site/login.html');
+				  }else{
+				    showErrorMsg(msg.error_content, '消息提示');
+			      }
+				}
+			  });
+	    	  }
+	    	});
+
+		});
+		*/
+
+	});
+</script>
+<!--该部分应该放在输出代码块的后面才起作用 -->
+<script type="text/javascript">
+
+SyntaxHighlighter.autoloader(
+	'applescript			/highlight/scripts/shBrushAppleScript.js',
+	'actionscript3 as3		/highlight/scripts/shBrushAS3.js',
+	'bash shell				/highlight/scripts/shBrushBash.js',
+	'coldfusion cf			/highlight/scripts/shBrushColdFusion.js',
+	'cpp c					/highlight/scripts/shBrushCpp.js',
+	'c# c-sharp csharp		/highlight/scripts/shBrushCSharp.js',
+	'css					/highlight/scripts/shBrushCss.js',
+	'delphi pascal			/highlight/scripts/shBrushDelphi.js',
+	'diff patch pas			/highlight/scripts/shBrushDiff.js',
+	'erl erlang				/highlight/scripts/shBrushErlang.js',
+	'groovy					/highlight/scripts/shBrushGroovy.js',
+	'java					/highlight/scripts/shBrushJava.js',
+	'jfx javafx				/highlight/scripts/shBrushJavaFX.js',
+	'js jscript javascript	/highlight/scripts/shBrushJScript.js',
+	'perl pl				/highlight/scripts/shBrushPerl.js',
+	'php					/highlight/scripts/shBrushPhp.js',
+	'text plain				/highlight/scripts/shBrushPlain.js',
+	'py python				/highlight/scripts/shBrushPython.js',
+	'ruby rails ror rb		/highlight/scripts/shBrushRuby.js',
+	'scala					/highlight/scripts/shBrushScala.js',
+	'sql					/highlight/scripts/shBrushSql.js',
+	'vb vbnet				/highlight/scripts/shBrushVb.js',
+	'xml xhtml xslt html	/highlight/scripts/shBrushXml.js'
+);
+SyntaxHighlighter.all();
+
+
+function code_hide(id){
+	var code = document.getElementById(id).style.display;
+	if(code == 'none'){
+		document.getElementById(id).style.display = 'block';
+	}else{
+		document.getElementById(id).style.display = 'none';
+	}
+}
+</script>
+<!--回顶部js2011.12.30-->
+<script language="javascript">
+ lastScrollY=0;
+ function heartBeat(){
+ var diffY;
+ if (document.documentElement && document.documentElement.scrollTop)
+     diffY = document.documentElement.scrollTop;
+ else if (document.body)
+     diffY = document.body.scrollTop
+ else
+     {/*Netscape stuff*/}
+ percent=.1*(diffY-lastScrollY);
+ if(percent>0)percent=Math.ceil(percent);
+ else percent=Math.floor(percent);
+ document.getElementById("full").style.top=parseInt(document.getElementById("full").style.top)+percent+"px";
+ lastScrollY=lastScrollY+percent;
+ if(lastScrollY<200)
+ {
+ document.getElementById("full").style.display="none";
+ }
+ else
+ {
+ document.getElementById("full").style.display="block";
+ }
+ }
+ var gkuan=document.body.clientWidth;
+ var ks=(gkuan-960)/2-30;
+ suspendcode="<div id=\"full\" style='right:4px;POSITION:absolute;TOP:500px;z-index:100;width:20px; height:50px;cursor:pointer;'><a href=\"javascript:void(0)\" onclick=\"window.scrollTo(0,0);\"><img src=\"\/image\/top.png\" /></a></div>"
+ document.write(suspendcode);
+ window.setInterval("heartBeat()",1);
+ </script><div id="full" style="right: 4px; position: absolute; top: 5252px; z-index: 100; width: 20px; height: 50px; cursor: pointer; display: block;"><a href="javascript:void(0)" onclick="window.scrollTo(0,0);"><img src="builder_files/top.png"></a></div>  <!-- footer -->
+  <div class="Blog_footer" style="clear:both">
+    <div><a href="http://www.chinaunix.net/about/index.shtml" target="_blank" rel="nofollow">关于我们</a> | <a href="http://www.it168.com/bottomfile/it168.shtml" target="_blank" rel="nofollow">关于IT168</a> | <a href="http://www.chinaunix.net/about/connect.html" target="_blank" rel="nofollow">联系方式</a> | <a href="http://www.chinaunix.net/about/service.html" target="_blank" rel="nofollow">广告合作</a> | <a href="http://www.it168.com//bottomfile/flgw/fl.htm" target="_blank" rel="nofollow">法律声明</a> | <a href="http://sso.chinaunix.net/Register?return_url=http%3A%2F%2Fblog.chinaunix.net%2F" target="_blank" rel="nofollow">免费注册</a>
+      <p>Copyright  2001-2010 ChinaUnix.net All Rights Reserved 北京皓辰网域网络信息技术有限公司. 版权所有 </p>
+      <div>感谢所有关心和支持过ChinaUnix的朋友们
+        <p>京ICP证041476号 京ICP证060528号</p>
+      </div>
+    </div>
+  </div>
+</div>
+<script language="javascript">
+
+//全局错误提示弹出框
+function showErrorMsg(content, title, url){
+	var url = url || '';
+	var title = title || '消息提示';
+	var html = '';
+	html += '<div class="HT_layer3_1 HT_layer3_2"><ul><li><p><span class="login_span1"></span>' + content + '</p></li>';
+	if(url == '' || url.length == 0){
+		html += '<li class="HT_li1"><input type="button" class="HT_btn2"  onclick=\'close_windows("error_msg")\'></li>';	
+	} else {
+		html += '<li class="HT_li1"><input type="button" class="login_btn1" onclick="location.href=\'' + url + '\'"></li>';
+	}
+	html += '</ul></div>';
+	$.cover(true);
+	   asyncbox.open({
+		 id: 'error_msg',
+		 title : title,
+		 html : html,
+		 'callback' : function(action){
+			 if(action == 'close'){
+				 $.cover(false);
+			 }
+		 }
+	});
+}
+
+//全局正确提示
+function showSucceedMsg(content, title , url ){
+	var url = url || '';
+	var title = title || '消息提示';
+	var html = '';
+	html += '<div class="HT_layer3_1 HT_layer3_2"><ul><li><p><span class="login_span2"></span>' + content + '</p></li>';
+	if(url == '' || url.length == 0){
+		html += '<li class="HT_li1"><input type="button" class="HT_btn2"  onclick=\'close_windows("error_msg")\'></li>';	
+	} else {
+		html += '<li class="HT_li1"><input type="button" class="HT_btn2" onclick="location.href=\'' + url + '\'"></li>';
+	}
+	html += '</ul></div>';
+	$.cover(true);
+	asyncbox.open({
+		 id: 'error_msg',
+		 title : title,
+		 html : html,
+		 'callback' : function(action){
+			 if(action == 'close'){
+				 $.cover(false);
+			 }
+		 }
+	});
+}
+
+//关闭指定id的窗口
+function close_windows(id){
+	$.cover(false);
+	$.close(id);
+}
+
+
+//公告
+var tID;
+var tn;                        // 高度
+var nStopTime = 5000;        // 不同行间滚动时间隔的时间，值越小，移动越快
+var nSpeed = 50;            // 滚动时，向上移动一像素间隔的时间，值越小，移动越快
+var isMove = true;
+var nHeight = 25;
+var nS = 0;
+var nNewsCount = 3;
+
+/**
+ * n 用于表示是否为第一次运行
+ **/
+function moveT(n)
+{
+    clearTimeout(tID)
+    var noticev2 = document.getElementById("noticev2")
+    nS = nSpeed;
+    
+    // 只在第一次调用时运行，初始化环境（有没有参数）
+    if (n)
+    {
+        // 设置行高
+        noticev2.style.lineHeight = nHeight + "px";
+        // 初始化显示位置
+        tn = 0;
+        // 刚进入时在第一行停止时间
+        nS = nStopTime;
+    }
+    
+    // 判断鼠标是否指向层
+    if (isMove)
+    {
+        // 向上移动一像素
+        tn--;
+        // 如果移动到最下面一行了，则移到顶行
+        if (Math.abs(tn) == nNewsCount * nHeight)
+        {
+            tn = 0;
+        }
+        // 设置位置
+        noticev2.style.marginTop = tn + "px";
+        // 完整显示一行时，停止一段时间
+        if (tn % nHeight == 0)
+        {
+            nS = nStopTime;
+        }
+    }
+
+    tID = setTimeout("moveT()", nS);
+}
+moveT(1);    // 此处可以传入任何参数
+</script>
+<script language="javascript" src="builder_files/pv.js"></script>
+<script>
+function sendPV(){
+    var pvTrack = new PvTrack();
+    pvTrack.type = 35; // 频道类别ID
+    pvTrack.channel = 189; // 频道ID
+    pvTrack.pageType = 0;
+    pvTrack.track();
+}
+window.setTimeout("sendPV()", 1000);
+</script>
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-20237423-2']);
+  _gaq.push(['_setDomainName', '.chinaunix.net']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+<script type="text/javascript">
+var _bdhmProtocol = (("https:" == document.location.protocol) ? " https://" : " http://");
+document.write(unescape("%3Cscript src='" + _bdhmProtocol + "hm.baidu.com/h.js%3F0ee5e8cdc4d43389b3d1bfd76e83216b' type='text/javascript'%3E%3C/script%3E"));
+
+function linkto(){
+    setCookie("returnUrl", location.href, 1441115526, "/");
+}
+function linktoOut(){
+    setCookie("returnOutUrl", location.href, 1441115526, "/");
+}
+//JS写COOKIE
+function setCookie(name, value, expires, path, domain){
+	if(!arguments[2]) expires = 3600 * 24;
+	if(!arguments[3]) path = "";
+	if(!arguments[4]) domain = "";
+	var str=name+"="+escape(value);
+	if(expires!=""){
+		var date=new Date();
+		date.setTime(date.getTime()+expires*1000);
+		str+=";expires="+date.toGMTString();
+	}
+	if(path!=""){
+		str+=";path="+path;//指定可访问cookie的目录
+	}
+	if(domain!=""){
+		str+=";domain="+domain;//指定可访问cookie的域
+	}
+	document.cookie = str;
+}
+
+</script><script src="builder_files/h.js" type="text/javascript"></script>
+<script type="text/javascript" src="builder_files/jquery_002.js"></script>
+
+
+<div id="asyncbox_cover" unselectable="on" style="opacity:0.1;filter:alpha(opacity=10);background:#000"></div><div id="asyncbox_clone"></div><div id="asyncbox_focus"></div><div id="asyncbox_load"><div><span></span></div></div></body></html>
