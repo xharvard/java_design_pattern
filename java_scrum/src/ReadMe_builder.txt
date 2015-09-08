@@ -13,3 +13,4 @@ Builder 		-> IHouseBuild.java
 ConcreteBuilder -> BritishStyleHouseBuilderImpl.java  ChinaStyleHouseBuilderImpl.java
 Director		-> HouseDirector.java
 
+作成日：2015/9/1
